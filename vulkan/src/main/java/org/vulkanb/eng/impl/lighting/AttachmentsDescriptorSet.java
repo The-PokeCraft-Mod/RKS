@@ -23,10 +23,10 @@ public class AttachmentsDescriptorSet extends DescriptorSet {
             this.device = descriptorPool.getDevice();
             this.binding = binding;
             var pDescriptorSetLayout = stack.mallocLong(1);
-            pDescriptorSetLayout.put(0, descriptorSetLayout.getVkDescriptorLayout());
+            pDescriptorSetLayout.put(0, descriptorSetLayout.vk());
             var allocInfo = VkDescriptorSetAllocateInfo.calloc(stack)
                     .sType$Default()
-                    .descriptorPool(descriptorPool.getVkDescriptorPool())
+                    .descriptorPool(descriptorPool.vk())
                     .pSetLayouts(pDescriptorSetLayout);
 
             var pDescriptorSet = stack.mallocLong(1);

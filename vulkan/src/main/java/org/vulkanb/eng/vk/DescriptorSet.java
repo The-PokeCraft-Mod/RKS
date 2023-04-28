@@ -16,28 +16,24 @@ public abstract class DescriptorSet {
     }
 
     public static class DynUniformDescriptorSet extends SimpleDescriptorSet {
-        public DynUniformDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout,
-                                       VulkanBuffer buffer, int binding, long size) {
+        public DynUniformDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VulkanBuffer buffer, int binding, long size) {
             super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, size);
         }
     }
 
     public static class SimpleDescriptorSet extends DescriptorSet {
 
-        public SimpleDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout,
-                                   VulkanBuffer buffer, int binding, int type, long size) {
+        public SimpleDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VulkanBuffer buffer, int binding, int type, long size) {
             try (var stack = MemoryStack.stackPush()) {
                 var device = descriptorPool.getDevice();
-                var pDescriptorSetLayout = stack.mallocLong(1);
-                pDescriptorSetLayout.put(0, descriptorSetLayout.getVkDescriptorLayout());
+                var pDescriptorSetLayout = stack.mallocLong(1).put(0, descriptorSetLayout.vk());
                 var allocInfo = VkDescriptorSetAllocateInfo.calloc(stack)
                         .sType$Default()
-                        .descriptorPool(descriptorPool.getVkDescriptorPool())
+                        .descriptorPool(descriptorPool.vk())
                         .pSetLayouts(pDescriptorSetLayout);
 
                 var pDescriptorSet = stack.mallocLong(1);
-                VkUtils.ok(vkAllocateDescriptorSets(device.getVkDevice(), allocInfo, pDescriptorSet),
-                        "Failed to create descriptor set");
+                VkUtils.ok(vkAllocateDescriptorSets(device.getVkDevice(), allocInfo, pDescriptorSet), "Failed to create descriptor set");
 
                 this.vkDescriptorSet = pDescriptorSet.get(0);
 
@@ -65,8 +61,7 @@ public abstract class DescriptorSet {
 
         public StorageDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout,
                                     VulkanBuffer buffer, int binding) {
-            super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                    buffer.getRequestedSize());
+            super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer.getRequestedSize());
         }
     }
 

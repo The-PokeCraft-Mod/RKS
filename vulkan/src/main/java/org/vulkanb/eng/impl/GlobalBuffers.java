@@ -22,9 +22,9 @@ import static org.lwjgl.vulkan.VK11.*;
 public class GlobalBuffers {
     public static final int IND_COMMAND_STRIDE = VkDrawIndexedIndirectCommand.SIZEOF;
     // Handle std430 alignment
-    private static final int MATERIAL_PADDING = GraphConstants.FLOAT_LENGTH * 3;
-    private static final int MATERIAL_SIZE = GraphConstants.VEC4_SIZE + GraphConstants.INT_LENGTH * 3 +
-            GraphConstants.FLOAT_LENGTH * 2 + MATERIAL_PADDING;
+    private static final int MATERIAL_PADDING = VkConstants.FLOAT_LENGTH * 3;
+    private static final int MATERIAL_SIZE = VkConstants.VEC4_SIZE + VkConstants.INT_LENGTH * 3 +
+            VkConstants.FLOAT_LENGTH * 2 + MATERIAL_PADDING;
     private final VulkanBuffer animJointMatricesBuffer;
     private final VulkanBuffer animWeightsBuffer;
     private final VulkanBuffer indicesBuffer;
@@ -47,7 +47,7 @@ public class GlobalBuffers {
         this.indicesBuffer = new VulkanBuffer(device, engProps.getMaxIndicesBuffer(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
         var maxMaterials = engProps.getMaxMaterials();
-        this.materialsBuffer = new VulkanBuffer(device, (long) maxMaterials * GraphConstants.VEC4_SIZE * 9, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        this.materialsBuffer = new VulkanBuffer(device, (long) maxMaterials * VkConstants.VEC4_SIZE * 9, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
         this.animJointMatricesBuffer = new VulkanBuffer(device, engProps.getMaxJointMatricesBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
@@ -145,7 +145,7 @@ public class GlobalBuffers {
                     for (var vulkanMesh : vulkanModel.getVulkanMeshList()) {
                         var indexedIndirectCommand = VkDrawIndexedIndirectCommand.calloc(stack);
                         indexedIndirectCommand.indexCount(vulkanMesh.numIndices());
-                        indexedIndirectCommand.firstIndex(vulkanMesh.indicesOffset() / GraphConstants.INT_LENGTH);
+                        indexedIndirectCommand.firstIndex(vulkanMesh.indicesOffset() / VkConstants.INT_LENGTH);
                         indexedIndirectCommand.instanceCount(1);
                         indexedIndirectCommand.vertexOffset(bufferOffset / VertexBufferStructure.SIZE_IN_BYTES);
                         indexedIndirectCommand.firstInstance(firstInstance);
@@ -179,7 +179,7 @@ public class GlobalBuffers {
                 this.animInstanceDataBuffers = new VulkanBuffer[numSwapChainImages];
                 for (var i = 0; i < numSwapChainImages; i++)
                     this.animInstanceDataBuffers[i] = new VulkanBuffer(device,
-                            (long) this.numAnimIndirectCommands * (GraphConstants.MAT4X4_SIZE + GraphConstants.INT_LENGTH),
+                            (long) this.numAnimIndirectCommands * (VkConstants.MAT4X4_SIZE + VkConstants.INT_LENGTH),
                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
                 indirectStgBuffer.recordTransferCommand(cmd, this.animIndirectBuffer);
@@ -205,7 +205,7 @@ public class GlobalBuffers {
                 var matrices = frame.jointMatrices();
                 for (var matrix : matrices) {
                     matrix.get(dataBuffer);
-                    dataBuffer.position(dataBuffer.position() + GraphConstants.MAT4X4_SIZE);
+                    dataBuffer.position(dataBuffer.position() + VkConstants.MAT4X4_SIZE);
                 }
             }
         }
@@ -241,9 +241,9 @@ public class GlobalBuffers {
             for (var vulkanMesh : vulkanModel.getVulkanMeshList())
                 for (var entity : entities) {
                     entity.getModelMatrix().get(pos, dataBuffer);
-                    pos += GraphConstants.MAT4X4_SIZE;
+                    pos += VkConstants.MAT4X4_SIZE;
                     dataBuffer.putInt(pos, vulkanMesh.globalMaterialIdx());
-                    pos += GraphConstants.INT_LENGTH;
+                    pos += VkConstants.INT_LENGTH;
                 }
         }
         instanceBuffer.unMap();
@@ -270,7 +270,7 @@ public class GlobalBuffers {
 
             vulkanMaterialList.add(new VulkanModel.VulkanMaterial(dataBuffer.position() / MATERIAL_SIZE));
             material.diffuseColor().get(dataBuffer);
-            dataBuffer.position(dataBuffer.position() + GraphConstants.VEC4_SIZE);
+            dataBuffer.position(dataBuffer.position() + VkConstants.VEC4_SIZE);
             dataBuffer.putInt(textureIdx);
             dataBuffer.putInt(normalMapIdx);
             dataBuffer.putInt(metalRoughMapIdx);
@@ -301,7 +301,7 @@ public class GlobalBuffers {
             var indices = meshData.indices();
 
             var numElements = positions.length + normals.length + tangents.length + biTangents.length + textCoords.length;
-            var verticesSize = numElements * GraphConstants.FLOAT_LENGTH;
+            var verticesSize = numElements * VkConstants.FLOAT_LENGTH;
 
             var localMaterialIdx = meshData.materialIdx();
             var globalMaterialIdx = 0;
@@ -411,7 +411,7 @@ public class GlobalBuffers {
                 for (var vulkanMesh : vulkanModel.getVulkanMeshList()) {
                     var indexedIndirectCommand = VkDrawIndexedIndirectCommand.calloc(stack);
                     indexedIndirectCommand.indexCount(vulkanMesh.numIndices());
-                    indexedIndirectCommand.firstIndex(vulkanMesh.indicesOffset() / GraphConstants.INT_LENGTH);
+                    indexedIndirectCommand.firstIndex(vulkanMesh.indicesOffset() / VkConstants.INT_LENGTH);
                     indexedIndirectCommand.instanceCount(entities.size());
                     indexedIndirectCommand.vertexOffset(vulkanMesh.verticesOffset() / VertexBufferStructure.SIZE_IN_BYTES);
                     indexedIndirectCommand.firstInstance(firstInstance);
@@ -439,7 +439,7 @@ public class GlobalBuffers {
                     Arrays.stream(this.instanceDataBuffers).forEach(VulkanBuffer::close);
                 this.instanceDataBuffers = new VulkanBuffer[numSwapChainImages];
                 for (var i = 0; i < numSwapChainImages; i++)
-                    this.instanceDataBuffers[i] = new VulkanBuffer(device, (long) numInstances * (GraphConstants.MAT4X4_SIZE + GraphConstants.INT_LENGTH),
+                    this.instanceDataBuffers[i] = new VulkanBuffer(device, (long) numInstances * (VkConstants.MAT4X4_SIZE + VkConstants.INT_LENGTH),
                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
                 indirectStgBuffer.recordTransferCommand(cmd, this.indirectBuffer);

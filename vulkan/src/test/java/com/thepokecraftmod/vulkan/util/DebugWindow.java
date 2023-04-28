@@ -22,7 +22,7 @@ public class DebugWindow implements Window {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
         if (!glfwVulkanSupported())
-            throw new IllegalStateException("Cannot find a compatible Vulkan installable client driver (ICD)");
+            throw new IllegalStateException("Cannot find a compatible Vulkan Driver");
 
         var vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         this.width = (int) (vidMode.width() / 1.5);
@@ -32,7 +32,6 @@ public class DebugWindow implements Window {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
 
-        // Create the window
         this.windowHandle = glfwCreateWindow(this.width, this.height, title, MemoryUtil.NULL, MemoryUtil.NULL);
         if (this.windowHandle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the GLFW window");
 

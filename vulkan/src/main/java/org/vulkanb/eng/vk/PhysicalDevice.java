@@ -67,7 +67,7 @@ public class PhysicalDevice {
             // Populate available devices
             List<PhysicalDevice> devices = new ArrayList<>();
             for (var i = 0; i < numDevices; i++) {
-                var vkPhysicalDevice = new VkPhysicalDevice(pPhysicalDevices.get(i), instance.getVkInstance());
+                var vkPhysicalDevice = new VkPhysicalDevice(pPhysicalDevices.get(i), instance.vk());
                 var physicalDevice = new PhysicalDevice(vkPhysicalDevice);
 
                 var deviceName = physicalDevice.getDeviceName();
@@ -101,14 +101,13 @@ public class PhysicalDevice {
         PointerBuffer pPhysicalDevices;
         // Get number of physical devices
         var intBuffer = stack.mallocInt(1);
-        VkUtils.ok(vkEnumeratePhysicalDevices(instance.getVkInstance(), intBuffer, null),
-                "Failed to get number of physical devices");
+        VkUtils.ok(vkEnumeratePhysicalDevices(instance.vk(), intBuffer, null), "Failed to get number of physical devices");
         var numDevices = intBuffer.get(0);
         Logger.debug("Detected {} physical device(s)", numDevices);
 
         // Populate physical devices list pointer
         pPhysicalDevices = stack.mallocPointer(numDevices);
-        VkUtils.ok(vkEnumeratePhysicalDevices(instance.getVkInstance(), intBuffer, pPhysicalDevices),
+        VkUtils.ok(vkEnumeratePhysicalDevices(instance.vk(), intBuffer, pPhysicalDevices),
                 "Failed to get physical devices");
         return pPhysicalDevices;
     }

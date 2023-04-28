@@ -100,14 +100,14 @@ public class GeometryRenderActivity implements Closeable {
         this.geometryDescriptorSetLayouts = new DescriptorSetLayout[]{this.uniformDescriptorSetLayout, this.uniformDescriptorSetLayout, this.storageDescriptorSetLayout, this.textureDescriptorSetLayout,};
 
         this.textureSampler = new TextureSampler(this.device, 1);
-        this.projMatrixUniform = new VulkanBuffer(this.device, GraphConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+        this.projMatrixUniform = new VulkanBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
         this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout, this.projMatrixUniform, 0);
         this.materialsDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.descriptorPool, this.storageDescriptorSetLayout, globalBuffers.getMaterialsBuffer(), 0);
 
         this.viewMatricesDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
         this.viewMatricesBuffer = new VulkanBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
-            this.viewMatricesBuffer[i] = new VulkanBuffer(this.device, GraphConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            this.viewMatricesBuffer[i] = new VulkanBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             this.viewMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout, this.viewMatricesBuffer[i], 0);
         }
     }

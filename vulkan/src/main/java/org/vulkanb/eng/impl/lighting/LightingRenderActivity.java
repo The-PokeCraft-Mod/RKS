@@ -175,16 +175,16 @@ public class LightingRenderActivity {
         this.shadowsMatricesBuffers = new VulkanBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
             this.lightsBuffers[i] = new VulkanBuffer(this.device, (long)
-                    GraphConstants.INT_LENGTH * 4 + GraphConstants.VEC4_SIZE * 2 * GraphConstants.MAX_LIGHTS +
-                    GraphConstants.VEC4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VkConstants.INT_LENGTH * 4 + VkConstants.VEC4_SIZE * 2 * VkConstants.MAX_LIGHTS +
+                    VkConstants.VEC4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
             this.invMatricesBuffers[i] = new VulkanBuffer(this.device, (long)
-                    GraphConstants.MAT4X4_SIZE * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VkConstants.MAT4X4_SIZE * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
             this.shadowsMatricesBuffers[i] = new VulkanBuffer(this.device, (long)
-                    (GraphConstants.MAT4X4_SIZE + GraphConstants.VEC4_SIZE) * GraphConstants.SHADOW_MAP_CASCADE_COUNT,
+                    (VkConstants.MAT4X4_SIZE + VkConstants.VEC4_SIZE) * VkConstants.SHADOW_MAP_CASCADE_COUNT,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
         }
@@ -285,8 +285,8 @@ public class LightingRenderActivity {
         var offset = 0;
         for (var cascadeShadow : cascadeShadows) {
             cascadeShadow.getProjViewMatrix().get(offset, buffer);
-            buffer.putFloat(offset + GraphConstants.MAT4X4_SIZE, cascadeShadow.getSplitDistance());
-            offset += GraphConstants.MAT4X4_SIZE + GraphConstants.VEC4_SIZE;
+            buffer.putFloat(offset + VkConstants.MAT4X4_SIZE, cascadeShadow.getSplitDistance());
+            offset += VkConstants.MAT4X4_SIZE + VkConstants.VEC4_SIZE;
         }
         shadowsUniformBuffer.unMap();
     }
@@ -295,7 +295,7 @@ public class LightingRenderActivity {
         var invProj = new Matrix4f(this.scene.getProjection().getProjectionMatrix()).invert();
         var invView = new Matrix4f(this.scene.getCamera().getViewMatrix()).invert();
         VkUtils.copyMatrixToBuffer(invMatricesBuffer, invProj, 0);
-        VkUtils.copyMatrixToBuffer(invMatricesBuffer, invView, GraphConstants.MAT4X4_SIZE);
+        VkUtils.copyMatrixToBuffer(invMatricesBuffer, invView, VkConstants.MAT4X4_SIZE);
     }
 
     private void updateLights(Vector4f ambientLight, Light[] lights, Matrix4f viewMatrix,
@@ -304,19 +304,19 @@ public class LightingRenderActivity {
         var uniformBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) lightsBuffer.getRequestedSize());
 
         ambientLight.get(0, uniformBuffer);
-        var offset = GraphConstants.VEC4_SIZE;
+        var offset = VkConstants.VEC4_SIZE;
         var numLights = lights != null ? lights.length : 0;
         uniformBuffer.putInt(offset, numLights);
-        offset += GraphConstants.VEC4_SIZE;
+        offset += VkConstants.VEC4_SIZE;
         for (var i = 0; i < numLights; i++) {
             var light = lights[i];
             this.auxVec.set(light.getPosition());
             this.auxVec.mul(viewMatrix);
             this.auxVec.w = light.getPosition().w;
             this.auxVec.get(offset, uniformBuffer);
-            offset += GraphConstants.VEC4_SIZE;
+            offset += VkConstants.VEC4_SIZE;
             light.getColor().get(offset, uniformBuffer);
-            offset += GraphConstants.VEC4_SIZE;
+            offset += VkConstants.VEC4_SIZE;
         }
 
         lightsBuffer.unMap();

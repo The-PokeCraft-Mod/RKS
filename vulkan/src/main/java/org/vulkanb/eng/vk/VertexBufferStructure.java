@@ -12,7 +12,7 @@ public class VertexBufferStructure extends VertexInputStateInfo {
     private static final int NORMAL_COMPONENTS = 3;
     private static final int NUMBER_OF_ATTRIBUTES = 5;
     private static final int POSITION_COMPONENTS = 3;
-    public static final int SIZE_IN_BYTES = (POSITION_COMPONENTS + NORMAL_COMPONENTS * 3 + TEXT_COORD_COMPONENTS) * GraphConstants.FLOAT_LENGTH;
+    public static final int SIZE_IN_BYTES = (POSITION_COMPONENTS + NORMAL_COMPONENTS * 3 + TEXT_COORD_COMPONENTS) * VkConstants.FLOAT_LENGTH;
 
     private final VkVertexInputAttributeDescription.Buffer viAttrs;
     private final VkVertexInputBindingDescription.Buffer viBindings;
@@ -36,7 +36,7 @@ public class VertexBufferStructure extends VertexInputStateInfo {
                 .binding(0)
                 .location(i)
                 .format(VK_FORMAT_R32G32B32_SFLOAT)
-                .offset(POSITION_COMPONENTS * GraphConstants.FLOAT_LENGTH);
+                .offset(POSITION_COMPONENTS * VkConstants.FLOAT_LENGTH);
 
         // Tangent
         i++;
@@ -44,7 +44,7 @@ public class VertexBufferStructure extends VertexInputStateInfo {
                 .binding(0)
                 .location(i)
                 .format(VK_FORMAT_R32G32B32_SFLOAT)
-                .offset(NORMAL_COMPONENTS * GraphConstants.FLOAT_LENGTH + POSITION_COMPONENTS * GraphConstants.FLOAT_LENGTH);
+                .offset(NORMAL_COMPONENTS * VkConstants.FLOAT_LENGTH + POSITION_COMPONENTS * VkConstants.FLOAT_LENGTH);
 
         // BiTangent
         i++;
@@ -52,7 +52,7 @@ public class VertexBufferStructure extends VertexInputStateInfo {
                 .binding(0)
                 .location(i)
                 .format(VK_FORMAT_R32G32B32_SFLOAT)
-                .offset(NORMAL_COMPONENTS * GraphConstants.FLOAT_LENGTH * 2 + POSITION_COMPONENTS * GraphConstants.FLOAT_LENGTH);
+                .offset(NORMAL_COMPONENTS * VkConstants.FLOAT_LENGTH * 2 + POSITION_COMPONENTS * VkConstants.FLOAT_LENGTH);
 
         // Texture coordinates
         i++;
@@ -60,7 +60,7 @@ public class VertexBufferStructure extends VertexInputStateInfo {
                 .binding(0)
                 .location(i)
                 .format(VK_FORMAT_R32G32_SFLOAT)
-                .offset(NORMAL_COMPONENTS * GraphConstants.FLOAT_LENGTH * 3 + POSITION_COMPONENTS * GraphConstants.FLOAT_LENGTH);
+                .offset(NORMAL_COMPONENTS * VkConstants.FLOAT_LENGTH * 3 + POSITION_COMPONENTS * VkConstants.FLOAT_LENGTH);
 
         this.viBindings.get(0)
                 .binding(0)

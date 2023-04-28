@@ -59,7 +59,7 @@ public class DescriptorPool {
         return this.device;
     }
 
-    public long getVkDescriptorPool() {
+    public long vk() {
         return this.vkDescriptorPool;
     }
 

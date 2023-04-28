@@ -15,18 +15,14 @@ public class MemoryAllocator {
     public MemoryAllocator(Instance instance, PhysicalDevice physicalDevice, VkDevice vkDevice) {
         try (var stack = MemoryStack.stackPush()) {
             var pAllocator = stack.mallocPointer(1);
-
-            var vmaVulkanFunctions = VmaVulkanFunctions.calloc(stack)
-                    .set(instance.getVkInstance(), vkDevice);
-
+            var vmaVulkanFunctions = VmaVulkanFunctions.calloc(stack).set(instance.vk(), vkDevice);
             var createInfo = VmaAllocatorCreateInfo.calloc(stack)
-                    .instance(instance.getVkInstance())
+                    .instance(instance.vk())
                     .device(vkDevice)
                     .physicalDevice(physicalDevice.getVkPhysicalDevice())
                     .pVulkanFunctions(vmaVulkanFunctions);
-            VkUtils.ok(vmaCreateAllocator(createInfo, pAllocator),
-                    "Failed to create VMA allocator");
 
+            VkUtils.ok(vmaCreateAllocator(createInfo, pAllocator), "Failed to create VMA allocator");
             this.vmaAllocator = pAllocator.get(0);
         }
     }

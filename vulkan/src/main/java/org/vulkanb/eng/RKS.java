@@ -7,11 +7,11 @@ import org.vulkanb.eng.scene.Scene;
 
 public class RKS {
 
-    private final RenderingImpl impl;
-    private final Render render;
-    private final Scene scene;
-    private final Window window;
-    private boolean running;
+    public final RenderingImpl impl;
+    public final Render render;
+    public final Scene scene;
+    public final Window window;
+    public boolean running;
 
     public RKS(RenderingImpl impl, Window window) {
         this.impl = impl;

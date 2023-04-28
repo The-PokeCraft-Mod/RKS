@@ -21,7 +21,7 @@ public abstract class DescriptorSetLayout {
         vkDestroyDescriptorSetLayout(this.device.getVkDevice(), this.vkDescriptorLayout, null);
     }
 
-    public long getVkDescriptorLayout() {
+    public long vk() {
         return this.vkDescriptorLayout;
     }
 

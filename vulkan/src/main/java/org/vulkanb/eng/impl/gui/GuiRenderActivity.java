@@ -84,7 +84,7 @@ public class GuiRenderActivity {
 
     private void createPipeline(PipelineCache pipelineCache, long vkRenderPass) {
         var pipeLineCreationInfo = new Pipeline.PipeLineCreationInfo(vkRenderPass,
-                this.shaderProgram, 1, false, true, GraphConstants.FLOAT_LENGTH * 2,
+                this.shaderProgram, 1, false, true, VkConstants.FLOAT_LENGTH * 2,
                 new ImGuiVertexBufferStructure(), this.descriptorSetLayouts);
         this.pipeline = new Pipeline(pipelineCache, pipeLineCreationInfo);
         pipeLineCreationInfo.close();
@@ -227,7 +227,7 @@ public class GuiRenderActivity {
         var imDrawData = ImGui.getDrawData();
 
         var vertexBufferSize = imDrawData.getTotalVtxCount() * ImGuiVertexBufferStructure.VERTEX_SIZE;
-        var indexBufferSize = imDrawData.getTotalIdxCount() * GraphConstants.SHORT_LENGTH;
+        var indexBufferSize = imDrawData.getTotalIdxCount() * VkConstants.SHORT_LENGTH;
 
         if (vertexBufferSize == 0 || indexBufferSize == 0) return;
         var vertexBuffer = this.vertexBuffers[idx];

@@ -22,10 +22,10 @@ public class TextureDescriptorSet extends DescriptorSet {
         try (var stack = MemoryStack.stackPush()) {
             var device = descriptorPool.getDevice();
             var pDescriptorSetLayout = stack.mallocLong(1);
-            pDescriptorSetLayout.put(0, descriptorSetLayout.getVkDescriptorLayout());
+            pDescriptorSetLayout.put(0, descriptorSetLayout.vk());
             var allocInfo = VkDescriptorSetAllocateInfo.calloc(stack)
                     .sType$Default()
-                    .descriptorPool(descriptorPool.getVkDescriptorPool())
+                    .descriptorPool(descriptorPool.vk())
                     .pSetLayouts(pDescriptorSetLayout);
 
             var pDescriptorSet = stack.mallocLong(1);

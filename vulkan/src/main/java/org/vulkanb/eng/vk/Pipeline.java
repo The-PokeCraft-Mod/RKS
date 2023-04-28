@@ -101,7 +101,7 @@ public class Pipeline {
             var descriptorSetLayouts = pipeLineCreationInfo.descriptorSetLayouts();
             var numLayouts = descriptorSetLayouts != null ? descriptorSetLayouts.length : 0;
             var ppLayout = stack.mallocLong(numLayouts);
-            for (var i = 0; i < numLayouts; i++) ppLayout.put(i, descriptorSetLayouts[i].getVkDescriptorLayout());
+            for (var i = 0; i < numLayouts; i++) ppLayout.put(i, descriptorSetLayouts[i].vk());
 
             var pPipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo.calloc(stack)
                     .sType$Default()

@@ -3,14 +3,14 @@ package org.vulkanb.eng.impl.gui;
 import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
-import org.vulkanb.eng.vk.GraphConstants;
+import org.vulkanb.eng.vk.VkConstants;
 import org.vulkanb.eng.vk.VertexInputStateInfo;
 
 import static org.lwjgl.vulkan.VK10.*;
 
 public class ImGuiVertexBufferStructure extends VertexInputStateInfo {
 
-    public static final int VERTEX_SIZE = GraphConstants.FLOAT_LENGTH * 5;
+    public static final int VERTEX_SIZE = VkConstants.FLOAT_LENGTH * 5;
     private static final int NUMBER_OF_ATTRIBUTES = 3;
     private final VkVertexInputAttributeDescription.Buffer viAttrs;
     private final VkVertexInputBindingDescription.Buffer viBindings;
@@ -34,7 +34,7 @@ public class ImGuiVertexBufferStructure extends VertexInputStateInfo {
                 .binding(0)
                 .location(i)
                 .format(VK_FORMAT_R32G32_SFLOAT)
-                .offset(GraphConstants.FLOAT_LENGTH * 2);
+                .offset(VkConstants.FLOAT_LENGTH * 2);
 
         // Color
         i++;
@@ -42,7 +42,7 @@ public class ImGuiVertexBufferStructure extends VertexInputStateInfo {
                 .binding(0)
                 .location(i)
                 .format(VK_FORMAT_R8G8B8A8_UNORM)
-                .offset(GraphConstants.FLOAT_LENGTH * 4);
+                .offset(VkConstants.FLOAT_LENGTH * 4);
 
         this.viBindings.get(0)
                 .binding(0)

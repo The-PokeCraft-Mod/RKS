@@ -21,12 +21,12 @@ public class ShadowsFrameBuffer {
             var shadowMapSize = settings.getShadowMapSize();
             var imageData = new Image.ImageData().width(shadowMapSize).height(shadowMapSize).
                     usage(usage | VK_IMAGE_USAGE_SAMPLED_BIT).
-                    format(VK_FORMAT_D32_SFLOAT).arrayLayers(GraphConstants.SHADOW_MAP_CASCADE_COUNT);
+                    format(VK_FORMAT_D32_SFLOAT).arrayLayers(VkConstants.SHADOW_MAP_CASCADE_COUNT);
             var depthImage = new Image(device, imageData);
 
             var imageViewData = new ImageView.ImageViewData().format(depthImage.getFormat()).
                     aspectMask(Attachment.calcAspectMask(usage)).viewType(VK_IMAGE_VIEW_TYPE_2D_ARRAY).
-                    baseArrayLayer(0).layerCount(GraphConstants.SHADOW_MAP_CASCADE_COUNT);
+                    baseArrayLayer(0).layerCount(VkConstants.SHADOW_MAP_CASCADE_COUNT);
             var depthImageView = new ImageView(device, depthImage.getVkImage(), imageViewData);
             this.depthAttachment = new Attachment(depthImage, depthImageView, true);
 
@@ -35,7 +35,7 @@ public class ShadowsFrameBuffer {
             var attachmentsBuff = stack.mallocLong(1);
             attachmentsBuff.put(0, this.depthAttachment.getImageView().getVkImageView());
             this.frameBuffer = new FrameBuffer(device, shadowMapSize, shadowMapSize, attachmentsBuff,
-                    this.shadowsRenderPass.getVkRenderPass(), GraphConstants.SHADOW_MAP_CASCADE_COUNT);
+                    this.shadowsRenderPass.getVkRenderPass(), VkConstants.SHADOW_MAP_CASCADE_COUNT);
         }
     }
 

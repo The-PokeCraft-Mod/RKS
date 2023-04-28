@@ -44,14 +44,13 @@ public class Render {
 
     public Render(Window window, Scene scene) {
         var engProps = Settings.getInstance();
-        this.instance = new Instance(engProps.isValidate());
+        this.instance = new Instance(engProps.isValidate(), window != null);
         this.physicalDevice = PhysicalDevice.createPhysicalDevice(this.instance, engProps.getPhysDeviceName());
         this.device = new Device(this.instance, this.physicalDevice);
         this.surface = new Surface(this.physicalDevice, window.getWindowHandle());
         this.graphQueue = new Queue.GraphicsQueue(this.device, 0);
         this.presentQueue = new Queue.PresentQueue(this.device, this.surface, 0);
-        this.swapChain = new SwapChain(this.device, this.surface, window, engProps.getRequestedImages(),
-                engProps.isvSync());
+        this.swapChain = new SwapChain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
         this.commandPool = new CommandPool(this.device, this.graphQueue.getQueueFamilyIndex());
         this.pipelineCache = new PipelineCache(this.device);
         this.vulkanModels = new ArrayList<>();
@@ -59,12 +58,11 @@ public class Render {
         this.globalBuffers = new GlobalBuffers(this.device);
         this.geometryRenderActivity = new GeometryRenderActivity(this.swapChain, this.pipelineCache, scene, this.globalBuffers);
         this.shadowRenderActivity = new ShadowRenderActivity(this.swapChain, this.pipelineCache, scene);
-        List<Attachment> attachments = new ArrayList<>(this.geometryRenderActivity.getAttachments());
+        var attachments = new ArrayList<>(this.geometryRenderActivity.getAttachments());
         attachments.add(this.shadowRenderActivity.getDepthAttachment());
         this.lightingRenderActivity = new LightingRenderActivity(this.swapChain, this.commandPool, this.pipelineCache, attachments, scene);
         this.animationComputeActivity = new AnimationComputeActivity(this.commandPool, this.pipelineCache);
-        this.guiRenderActivity = new GuiRenderActivity(this.swapChain, this.commandPool, this.graphQueue, this.pipelineCache,
-                this.lightingRenderActivity.getLightingFrameBuffer().getLightingRenderPass().getVkRenderPass());
+        this.guiRenderActivity = new GuiRenderActivity(this.swapChain, this.commandPool, this.graphQueue, this.pipelineCache, this.lightingRenderActivity.getLightingFrameBuffer().getLightingRenderPass().getVkRenderPass());
         this.entitiesLoadedTimeStamp = 0;
         createCommandBuffers();
     }

@@ -77,7 +77,7 @@ public class ShadowRenderActivity {
         this.shadowsUniforms = new VulkanBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
             this.shadowsUniforms[i] = new VulkanBuffer(this.device, (long)
-                    GraphConstants.MAT4X4_SIZE * GraphConstants.SHADOW_MAP_CASCADE_COUNT,
+                    VkConstants.MAT4X4_SIZE * VkConstants.SHADOW_MAP_CASCADE_COUNT,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             this.projMatrixDescriptorSet[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout,
                     this.shadowsUniforms[i], 0);
@@ -107,7 +107,7 @@ public class ShadowRenderActivity {
 
     private void createShadowCascades() {
         this.cascadeShadows = new ArrayList<>();
-        for (var i = 0; i < GraphConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
+        for (var i = 0; i < VkConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
             var cascadeShadow = new CascadeShadow();
             this.cascadeShadows.add(cascadeShadow);
         }
@@ -211,7 +211,7 @@ public class ShadowRenderActivity {
         var offset = 0;
         for (var cascadeShadow : this.cascadeShadows) {
             VkUtils.copyMatrixToBuffer(this.shadowsUniforms[idx], cascadeShadow.getProjViewMatrix(), offset);
-            offset += GraphConstants.MAT4X4_SIZE;
+            offset += VkConstants.MAT4X4_SIZE;
         }
     }
 

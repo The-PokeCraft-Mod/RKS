@@ -4,7 +4,7 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkSpecializationInfo;
 import org.lwjgl.vulkan.VkSpecializationMapEntry;
 import org.vulkanb.eng.Settings;
-import org.vulkanb.eng.vk.GraphConstants;
+import org.vulkanb.eng.vk.VkConstants;
 
 import java.nio.ByteBuffer;
 
@@ -16,14 +16,14 @@ public class GeometrySpecConstants {
 
     public GeometrySpecConstants() {
         var settings = Settings.getInstance();
-        this.data = MemoryUtil.memAlloc(GraphConstants.INT_LENGTH);
+        this.data = MemoryUtil.memAlloc(VkConstants.INT_LENGTH);
         this.data.putInt(settings.getMaxTextures());
         this.data.flip();
 
         this.specEntryMap = VkSpecializationMapEntry.calloc(1);
         this.specEntryMap.get(0)
                 .constantID(0)
-                .size(GraphConstants.INT_LENGTH)
+                .size(VkConstants.INT_LENGTH)
                 .offset(0);
 
         this.specInfo = VkSpecializationInfo.calloc();

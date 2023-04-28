@@ -18,12 +18,17 @@ public class Standalone implements RenderingImpl {
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float MOVEMENT_SPEED = 10.0f / 1000000000f;
     private float angleInc;
-    private Entity bobEntity;
+    private Entity rayquaza;
+    private Entity jit;
     private Light directionalLight;
     private float lightAngle = 90.1f;
-    private int maxFrames = 0;
+    private int maxFrames = 0; // FIXME: doesnt calc for other models
+    private boolean loadedJitModel = false;
+    private Render renderer;
+    private Scene scene;
 
     public static void main(String[] args) {
+//        System.loadLibrary("renderdoc");
         new RKS(new Standalone(), new DebugWindow("RKS Standalone Test", new GuiRenderActivity.KeyCallback(), new GuiRenderActivity.CharCallBack())).start();
     }
 
@@ -53,8 +58,10 @@ public class Standalone implements RenderingImpl {
             scene.setLightChanged(false);
         }
 
+        if (window.isKeyPressed(GLFW_KEY_O)) if (!loadedJitModel) loadJitModel();
+
         if (window.isKeyPressed(GLFW_KEY_SPACE))
-            this.bobEntity.getEntityAnimation().setStarted(!this.bobEntity.getEntityAnimation().isStarted());
+            this.rayquaza.getEntityAnimation().setStarted(!this.rayquaza.getEntityAnimation().isStarted());
 
         var mouseInput = window.getMouseInput();
         if (mouseInput.isRightButtonPressed()) {
@@ -67,29 +74,43 @@ public class Standalone implements RenderingImpl {
         else if (this.lightAngle > 180) this.lightAngle = 180;
         updateDirectionalLight();
 
-        var entityAnimation = this.bobEntity.getEntityAnimation();
+        var entityAnimation = this.rayquaza.getEntityAnimation();
         if (entityAnimation != null && entityAnimation.isStarted()) {
             var currentFrame = Math.floorMod(entityAnimation.getCurrentFrame() + 1, this.maxFrames);
             entityAnimation.setCurrentFrame(currentFrame);
         }
     }
 
+    private void loadJitModel() {
+        var id = "typhlosion";
+        var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui", true);
+        this.maxFrames = data.getAnimationsList().get(0).frames().size();
+        this.jit = new Entity("typhlosion", id, new Vector3f(0.0f, 0.0f, 0.0f));
+        jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
+        jit.setScale(1);
+        jit.updateModelMatrix();
+        jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
+        scene.addEntity(jit);
+
+        renderer.loadModels(List.of(data));
+        this.loadedJitModel = true;
+    }
+
     @Override
-    public void init(Scene scene, Render render) {
-        List<ModelData> modelDataList = new ArrayList<>();
+    public void init(Scene scene, Render renderer) {
+        this.renderer = renderer;
+        this.scene = scene;
+        var id = "rayquaza";
+        var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
+        this.maxFrames = data.getAnimationsList().get(0).frames().size();
+        this.rayquaza = new Entity("rayquaza", id, new Vector3f(0.0f, 0.0f, 0.0f));
+        rayquaza.getRotation().rotateY((float) Math.toRadians(-90.0f));
+        rayquaza.setScale(1);
+        rayquaza.updateModelMatrix();
+        rayquaza.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
+        scene.addEntity(rayquaza);
 
-        var bobModelId = "bob-model";
-        var bobModelData = ModelLoader.loadModel(bobModelId, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
-        this.maxFrames = bobModelData.getAnimationsList().get(0).frames().size();
-        modelDataList.add(bobModelData);
-        this.bobEntity = new Entity("BobEntity", bobModelId, new Vector3f(0.0f, 0.0f, 0.0f));
-        this.bobEntity.getRotation().rotateY((float) Math.toRadians(-90.0f));
-        this.bobEntity.setScale(1);
-        this.bobEntity.updateModelMatrix();
-        this.bobEntity.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
-        scene.addEntity(this.bobEntity);
-
-        render.loadModels(modelDataList);
+        renderer.loadModels(List.of(data));
 
         var camera = scene.getCamera();
         camera.setPosition(-6.0f, 2.0f, 0.0f);
@@ -98,8 +119,8 @@ public class Standalone implements RenderingImpl {
         scene.getAmbientLight().set(0.2f, 0.2f, 0.2f, 1.0f);
         List<Light> lights = new ArrayList<>();
         this.directionalLight = new Light();
-        this.directionalLight.getColor().set(1.0f, 1.0f, 1.0f, 1.0f);
-        lights.add(this.directionalLight);
+        directionalLight.getColor().set(1.0f, 1.0f, 1.0f, 1.0f);
+        lights.add(directionalLight);
         updateDirectionalLight();
 
         var lightArr = new Light[lights.size()];

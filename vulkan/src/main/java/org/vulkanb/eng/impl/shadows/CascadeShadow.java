@@ -4,7 +4,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.vulkanb.eng.scene.Scene;
-import org.vulkanb.eng.vk.GraphConstants;
+import org.vulkanb.eng.vk.VkConstants;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class CascadeShadow {
 
         var cascadeSplitLambda = 0.95f;
 
-        var cascadeSplits = new float[GraphConstants.SHADOW_MAP_CASCADE_COUNT];
+        var cascadeSplits = new float[VkConstants.SHADOW_MAP_CASCADE_COUNT];
 
         var nearClip = projMatrix.perspectiveNear();
         var farClip = projMatrix.perspectiveFar();
@@ -40,8 +40,8 @@ public class CascadeShadow {
 
         // Calculate split depths based on view camera frustum
         // Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-        for (var i = 0; i < GraphConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
-            var p = (i + 1) / (float) (GraphConstants.SHADOW_MAP_CASCADE_COUNT);
+        for (var i = 0; i < VkConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
+            var p = (i + 1) / (float) (VkConstants.SHADOW_MAP_CASCADE_COUNT);
             var log = (float) (nearClip * java.lang.Math.pow(ratio, p));
             var uniform = nearClip + range * p;
             var d = cascadeSplitLambda * (log - uniform) + uniform;
@@ -50,7 +50,7 @@ public class CascadeShadow {
 
         // Calculate orthographic projection matrix for each cascade
         var lastSplitDist = 0.0f;
-        for (var i = 0; i < GraphConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
+        for (var i = 0; i < VkConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
             var splitDist = cascadeSplits[i];
 
             var frustumCorners = new Vector3f[]{

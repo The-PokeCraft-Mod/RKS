@@ -16,7 +16,7 @@ public class AnimationComputeActivity {
     private static final String ANIM_COMPUTE_SHADER_FILE_GLSL = "animations_comp.glsl";
     private static final String ANIM_COMPUTE_SHADER_FILE_SPV = ANIM_COMPUTE_SHADER_FILE_GLSL + ".spv";
     private static final int LOCAL_SIZE_X = 32;
-    private static final int PUSH_CONSTANTS_SIZE = GraphConstants.INT_LENGTH * 5;
+    private static final int PUSH_CONSTANTS_SIZE = VkConstants.INT_LENGTH * 5;
 
     private final Queue.ComputeQueue computeQueue;
     private final Device device;
@@ -60,9 +60,7 @@ public class AnimationComputeActivity {
     }
 
     private void createDescriptorPool() {
-        List<DescriptorPool.DescriptorTypeCount> descriptorTypeCounts = new ArrayList<>();
-        descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
-        this.descriptorPool = new DescriptorPool(this.device, descriptorTypeCounts);
+        this.descriptorPool = new DescriptorPool(this.device, List.of(new DescriptorPool.DescriptorTypeCount(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)));
     }
 
     private void createDescriptorSets() {
@@ -76,8 +74,7 @@ public class AnimationComputeActivity {
     }
 
     private void createPipeline(PipelineCache pipelineCache) {
-        var pipeLineCreationInfo = new ComputePipeline.PipeLineCreationInfo(this.shaderProgram,
-                this.descriptorSetLayouts, PUSH_CONSTANTS_SIZE);
+        var pipeLineCreationInfo = new ComputePipeline.PipeLineCreationInfo(this.shaderProgram, this.descriptorSetLayouts, PUSH_CONSTANTS_SIZE);
         this.computePipeline = new ComputePipeline(pipelineCache, pipeLineCreationInfo);
     }
 
@@ -85,21 +82,14 @@ public class AnimationComputeActivity {
         var settings = Settings.getInstance();
         if (settings.isShaderRecompilation())
             ShaderCompiler.compileShaderIfChanged(ANIM_COMPUTE_SHADER_FILE_GLSL, Shaderc.shaderc_compute_shader);
-        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderModuleData[]
-                {
-                        new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_COMPUTE_BIT, ANIM_COMPUTE_SHADER_FILE_SPV),
-                });
+        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderModuleData[]{new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_COMPUTE_BIT, ANIM_COMPUTE_SHADER_FILE_SPV)});
     }
 
     public void onAnimatedEntitiesLoaded(GlobalBuffers globalBuffers) {
-        this.srcVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.descriptorPool,
-                this.storageDescriptorSetLayout, globalBuffers.getVerticesBuffer(), 0);
-        this.weightsDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.descriptorPool,
-                this.storageDescriptorSetLayout, globalBuffers.getAnimWeightsBuffer(), 0);
-        this.dstVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.descriptorPool,
-                this.storageDescriptorSetLayout, globalBuffers.getAnimVerticesBuffer(), 0);
-        this.jointMatricesDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.descriptorPool,
-                this.storageDescriptorSetLayout, globalBuffers.getAnimJointMatricesBuffer(), 0);
+        this.srcVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getVerticesBuffer(), 0);
+        this.weightsDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getAnimWeightsBuffer(), 0);
+        this.dstVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getAnimVerticesBuffer(), 0);
+        this.jointMatricesDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getAnimJointMatricesBuffer(), 0);
     }
 
     public void recordCommandBuffer(GlobalBuffers globalBuffers) {
@@ -117,15 +107,13 @@ public class AnimationComputeActivity {
 
             vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipeline());
 
-            var descriptorSets = stack.mallocLong(4);
-
-            descriptorSets.put(this.srcVerticesDescriptorSet.getVkDescriptorSet());
-            descriptorSets.put(this.weightsDescriptorSet.getVkDescriptorSet());
-            descriptorSets.put(this.dstVerticesDescriptorSet.getVkDescriptorSet());
-            descriptorSets.put(this.jointMatricesDescriptorSet.getVkDescriptorSet());
-            descriptorSets.flip();
-            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE,
-                    this.computePipeline.getVkPipelineLayout(), 0, descriptorSets, null);
+            var descriptorSets = stack.mallocLong(4)
+                    .put(this.srcVerticesDescriptorSet.getVkDescriptorSet())
+                    .put(this.weightsDescriptorSet.getVkDescriptorSet())
+                    .put(this.dstVerticesDescriptorSet.getVkDescriptorSet())
+                    .put(this.jointMatricesDescriptorSet.getVkDescriptorSet())
+                    .flip();
+            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipelineLayout(), 0, descriptorSets, null);
 
             var vulkanAnimEntityList = globalBuffers.getVulkanAnimEntityList();
             for (var vulkanAnimEntity : vulkanAnimEntityList) {
@@ -140,19 +128,17 @@ public class AnimationComputeActivity {
 
                 for (var vulkanAnimMesh : vulkanAnimEntity.getVulkanAnimMeshList()) {
                     var mesh = vulkanAnimMesh.vulkanMesh();
-
                     var groupSize = (int) Math.ceil((mesh.verticesSize() / (float) InstancedVertexBufferStructure.SIZE_IN_BYTES) / LOCAL_SIZE_X);
 
                     // Push constants
                     var pushConstantBuffer = stack.malloc(PUSH_CONSTANTS_SIZE);
-                    pushConstantBuffer.putInt(mesh.verticesOffset() / GraphConstants.FLOAT_LENGTH);
-                    pushConstantBuffer.putInt(mesh.verticesSize() / GraphConstants.FLOAT_LENGTH);
-                    pushConstantBuffer.putInt(mesh.weightsOffset() / GraphConstants.FLOAT_LENGTH);
-                    pushConstantBuffer.putInt(jointMatricesOffset / GraphConstants.MAT4X4_SIZE);
-                    pushConstantBuffer.putInt(vulkanAnimMesh.meshOffset() / GraphConstants.FLOAT_LENGTH);
+                    pushConstantBuffer.putInt(mesh.verticesOffset() / VkConstants.FLOAT_LENGTH);
+                    pushConstantBuffer.putInt(mesh.verticesSize() / VkConstants.FLOAT_LENGTH);
+                    pushConstantBuffer.putInt(mesh.weightsOffset() / VkConstants.FLOAT_LENGTH);
+                    pushConstantBuffer.putInt(jointMatricesOffset / VkConstants.MAT4X4_SIZE);
+                    pushConstantBuffer.putInt(vulkanAnimMesh.meshOffset() / VkConstants.FLOAT_LENGTH);
                     pushConstantBuffer.flip();
-                    vkCmdPushConstants(cmdHandle, this.computePipeline.getVkPipelineLayout(),
-                            VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantBuffer);
+                    vkCmdPushConstants(cmdHandle, this.computePipeline.getVkPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantBuffer);
 
                     vkCmdDispatch(cmdHandle, groupSize, 1, 1);
                 }

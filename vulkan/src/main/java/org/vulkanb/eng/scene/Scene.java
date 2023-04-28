@@ -2,7 +2,7 @@ package org.vulkanb.eng.scene;
 
 import org.joml.Vector4f;
 import org.vulkanb.eng.Window;
-import org.vulkanb.eng.vk.GraphConstants;
+import org.vulkanb.eng.vk.VkConstants;
 
 import java.util.*;
 
@@ -71,8 +71,8 @@ public class Scene {
     public void setLights(Light[] lights) {
         this.directionalLight = null;
         var numLights = lights != null ? lights.length : 0;
-        if (numLights > GraphConstants.MAX_LIGHTS)
-            throw new RuntimeException("Maximum number of lights set to: " + GraphConstants.MAX_LIGHTS);
+        if (numLights > VkConstants.MAX_LIGHTS)
+            throw new RuntimeException("Maximum number of lights set to: " + VkConstants.MAX_LIGHTS);
         this.lights = lights;
         var option = Arrays.stream(lights).filter(l -> l.getPosition().w == 0).findFirst();
         option.ifPresent(light -> this.directionalLight = light);
