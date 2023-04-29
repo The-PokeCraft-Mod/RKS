@@ -3,7 +3,8 @@ package com.thepokecraftmod.renderer.vk;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,8 +13,8 @@ import java.util.Set;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class PhysicalDevice {
-
+public class PhysicalDevice implements VkWrapper<VkPhysicalDevice> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PhysicalDevice.class);
     private final VkExtensionProperties.Buffer vkDeviceExtensions;
     private final VkPhysicalDeviceMemoryProperties vkMemoryProperties;
     private final VkPhysicalDevice vkPhysicalDevice;
@@ -56,7 +57,7 @@ public class PhysicalDevice {
     }
 
     public static PhysicalDevice createPhysicalDevice(Instance instance, String prefferredDeviceName) {
-        Logger.debug("Selecting physical devices");
+        LOGGER.info("Selecting physical devices");
         PhysicalDevice selectedPhysicalDevice = null;
         try (var stack = MemoryStack.stackPush()) {
             // Get available devices
@@ -72,14 +73,14 @@ public class PhysicalDevice {
 
                 var deviceName = physicalDevice.getDeviceName();
                 if (physicalDevice.hasGraphicsQueueFamily() && physicalDevice.hasKHRSwapChainExtension()) {
-                    Logger.debug("Device [{}] supports required extensions", deviceName);
+                    LOGGER.info("Device [{}] supports required extensions", deviceName);
                     if (prefferredDeviceName != null && prefferredDeviceName.equals(deviceName)) {
                         selectedPhysicalDevice = physicalDevice;
                         break;
                     }
                     devices.add(physicalDevice);
                 } else {
-                    Logger.debug("Device [{}] does not support required extensions", deviceName);
+                    LOGGER.info("Device [{}] does not support required extensions", deviceName);
                     physicalDevice.close();
                 }
             }
@@ -91,7 +92,7 @@ public class PhysicalDevice {
             for (var physicalDevice : devices) physicalDevice.close();
 
             if (selectedPhysicalDevice == null) throw new RuntimeException("No suitable physical devices found");
-            Logger.debug("Selected device: [{}]", selectedPhysicalDevice.getDeviceName());
+            LOGGER.info("Selected device: [{}]", selectedPhysicalDevice.getDeviceName());
         }
 
         return selectedPhysicalDevice;
@@ -103,7 +104,7 @@ public class PhysicalDevice {
         var intBuffer = stack.mallocInt(1);
         VkUtils.ok(vkEnumeratePhysicalDevices(instance.vk(), intBuffer, null), "Failed to get number of physical devices");
         var numDevices = intBuffer.get(0);
-        Logger.debug("Detected {} physical device(s)", numDevices);
+        LOGGER.info("Detected {} physical device(s)", numDevices);
 
         // Populate physical devices list pointer
         pPhysicalDevices = stack.mallocPointer(numDevices);
@@ -115,11 +116,11 @@ public class PhysicalDevice {
     private Set<Integer> calSupportedSampleCount(VkPhysicalDeviceProperties devProps) {
         Set<Integer> result = new HashSet<>();
         var colorCounts = Integer.toUnsignedLong(this.vkPhysicalDeviceProperties.limits().framebufferColorSampleCounts());
-        Logger.debug("Color max samples: {}", colorCounts);
+        LOGGER.info("Color max samples: {}", colorCounts);
         var depthCounts = Integer.toUnsignedLong(devProps.limits().framebufferDepthSampleCounts());
-        Logger.debug("Depth max samples: {}", depthCounts);
+        LOGGER.info("Depth max samples: {}", depthCounts);
         var counts = (int) (Math.min(colorCounts, depthCounts));
-        Logger.debug("Max samples: {}", depthCounts);
+        LOGGER.info("Max samples: {}", depthCounts);
 
         result.add(VK_SAMPLE_COUNT_1_BIT);
         if ((counts & VK_SAMPLE_COUNT_64_BIT) > 0) result.add(VK_SAMPLE_COUNT_64_BIT);
@@ -131,10 +132,10 @@ public class PhysicalDevice {
 
         return result;
     }
-
+    
+    @Override
     public void close() {
-        if (Logger.isDebugEnabled())
-            Logger.debug("Destroying physical device [{}]", this.vkPhysicalDeviceProperties.deviceNameString());
+        LOGGER.info("Closing {}", this.vkPhysicalDeviceProperties.deviceNameString());
         this.vkMemoryProperties.free();
         this.vkPhysicalDeviceFeatures.free();
         this.vkQueueFamilyProps.free();
@@ -149,8 +150,9 @@ public class PhysicalDevice {
     public VkPhysicalDeviceMemoryProperties getVkMemoryProperties() {
         return this.vkMemoryProperties;
     }
-
-    public VkPhysicalDevice getVkPhysicalDevice() {
+    
+    @Override
+    public VkPhysicalDevice vk() {
         return this.vkPhysicalDevice;
     }
 

@@ -2,19 +2,20 @@ package com.thepokecraftmod.renderer.vk;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class Device {
-
+public class Device implements VkWrapper<VkDevice> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);
     private final MemoryAllocator memoryAllocator;
     private final PhysicalDevice physicalDevice;
     private final boolean samplerAnisotropy;
     private final VkDevice vkDevice;
 
     public Device(Instance instance, PhysicalDevice physicalDevice) {
-        Logger.debug("Creating device");
+        LOGGER.info("Creating device");
 
         this.physicalDevice = physicalDevice;
         try (var stack = MemoryStack.stackPush()) {
@@ -52,16 +53,17 @@ public class Device {
                     .pQueueCreateInfos(queueCreationInfoBuf);
 
             var pp = stack.mallocPointer(1);
-            VkUtils.ok(vkCreateDevice(physicalDevice.getVkPhysicalDevice(), deviceCreateInfo, null, pp),
+            VkUtils.ok(vkCreateDevice(physicalDevice.vk(), deviceCreateInfo, null, pp),
                     "Failed to create device");
-            this.vkDevice = new VkDevice(pp.get(0), physicalDevice.getVkPhysicalDevice(), deviceCreateInfo);
+            this.vkDevice = new VkDevice(pp.get(0), physicalDevice.vk(), deviceCreateInfo);
 
             this.memoryAllocator = new MemoryAllocator(instance, physicalDevice, this.vkDevice);
         }
     }
-
+    
+    @Override
     public void close() {
-        Logger.debug("Destroying Vulkan device");
+        LOGGER.info("Closing Vulkan device");
         this.memoryAllocator.close();
         vkDestroyDevice(this.vkDevice, null);
     }
@@ -73,8 +75,9 @@ public class Device {
     public PhysicalDevice getPhysicalDevice() {
         return this.physicalDevice;
     }
-
-    public VkDevice getVkDevice() {
+    
+    @Override
+    public VkDevice vk() {
         return this.vkDevice;
     }
 

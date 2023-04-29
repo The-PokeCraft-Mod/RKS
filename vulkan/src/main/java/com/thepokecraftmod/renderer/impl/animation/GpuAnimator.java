@@ -24,7 +24,7 @@ public class GpuAnimator {
     private final Device device;
     private final MemoryBarrier memoryBarrier;
 
-    private CommandBuffer commandBuffer;
+    private CmdBuffer cmdBuffer;
     private ComputePipeline computePipeline;
     private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
@@ -36,28 +36,28 @@ public class GpuAnimator {
     private DescriptorSetLayout.StorageDescriptorSetLayout storageDescriptorSetLayout;
     private DescriptorSet.StorageDescriptorSet weightsDescriptorSet;
 
-    public GpuAnimator(CommandPool commandPool, PipelineCache pipelineCache) {
+    public GpuAnimator(CmdPool cmdPool, PipelineCache pipelineCache) {
         this.device = pipelineCache.getDevice();
         this.computeQueue = new Queue.ComputeQueue(this.device, 0);
         createDescriptorPool();
         createDescriptorSets();
         createShaders();
         createPipeline(pipelineCache);
-        createCommandBuffers(commandPool);
+        createCommandBuffers(cmdPool);
         this.memoryBarrier = new MemoryBarrier(0, VK_ACCESS_SHADER_WRITE_BIT);
     }
 
     public void close() {
         this.computePipeline.close();
         this.shaderProgram.close();
-        this.commandBuffer.close();
+        this.cmdBuffer.close();
         this.pools.close();
         this.storageDescriptorSetLayout.close();
         this.fence.close();
     }
 
-    private void createCommandBuffers(CommandPool commandPool) {
-        this.commandBuffer = new CommandBuffer(commandPool, true, false);
+    private void createCommandBuffers(CmdPool cmdPool) {
+        this.cmdBuffer = new CmdBuffer(cmdPool, true, false);
         this.fence = new Fence(this.device, true);
     }
 
@@ -99,9 +99,9 @@ public class GpuAnimator {
             this.fence.waitForFence();
             this.fence.reset();
 
-            this.commandBuffer.reset();
-            this.commandBuffer.beginRecording();
-            var cmdHandle = this.commandBuffer.getVkCommandBuffer();
+            this.cmdBuffer.reset();
+            this.cmdBuffer.beginRecording();
+            var cmdHandle = this.cmdBuffer.vk();
 
             vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
             vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipeline());
@@ -141,13 +141,13 @@ public class GpuAnimator {
                 }
             }
         }
-        this.commandBuffer.endRecording();
+        this.cmdBuffer.endRecording();
     }
 
     public void submit() {
         try (var stack = MemoryStack.stackPush()) {
             this.computeQueue.submit(
-                    stack.pointers(this.commandBuffer.getVkCommandBuffer()),
+                    stack.pointers(this.cmdBuffer.vk()),
                     null,
                     null,
                     null,

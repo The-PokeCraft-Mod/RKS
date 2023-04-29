@@ -3,7 +3,8 @@ package com.thepokecraftmod.renderer.vk;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
@@ -11,6 +12,7 @@ import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.vulkan.VK11.*;
 
 public class Texture {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Texture.class);
     private final int height;
     private final int mipLevels;
     private final int width;
@@ -22,7 +24,7 @@ public class Texture {
     private VulkanBuffer stgBuffer;
 
     public Texture(Device device, String fileName, int imageFormat) {
-        Logger.debug("Creating texture [{}]", fileName);
+        LOGGER.info("Creating texture [{}]", fileName);
         this.recordedTransition = false;
         this.fileName = fileName;
         ByteBuffer buf = null;
@@ -107,7 +109,7 @@ public class Texture {
         return Math.log(n) / Math.log(2);
     }
 
-    private void recordCopyBuffer(MemoryStack stack, CommandBuffer cmd, VulkanBuffer bufferData) {
+    private void recordCopyBuffer(MemoryStack stack, CmdBuffer cmd, VulkanBuffer bufferData) {
 
         var region = VkBufferImageCopy.calloc(1, stack)
                 .bufferOffset(0)
@@ -122,11 +124,11 @@ public class Texture {
                 .imageOffset(it -> it.x(0).y(0).z(0))
                 .imageExtent(it -> it.width(this.width).height(this.height).depth(1));
 
-        vkCmdCopyBufferToImage(cmd.getVkCommandBuffer(), bufferData.getBuffer(), this.image.getVkImage(),
+        vkCmdCopyBufferToImage(cmd.vk(), bufferData.getBuffer(), this.image.getVkImage(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
     }
 
-    private void recordGenerateMipMaps(MemoryStack stack, CommandBuffer cmd) {
+    private void recordGenerateMipMaps(MemoryStack stack, CmdBuffer cmd) {
         var subResourceRange = VkImageSubresourceRange.calloc(stack)
                 .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
                 .baseArrayLayer(0)
@@ -151,7 +153,7 @@ public class Texture {
                     .srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT)
                     .dstAccessMask(VK_ACCESS_TRANSFER_READ_BIT);
 
-            vkCmdPipelineBarrier(cmd.getVkCommandBuffer(),
+            vkCmdPipelineBarrier(cmd.vk(),
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                     null, null, barrier);
 
@@ -177,7 +179,7 @@ public class Texture {
                             .baseArrayLayer(0)
                             .layerCount(1));
 
-            vkCmdBlitImage(cmd.getVkCommandBuffer(),
+            vkCmdBlitImage(cmd.vk(),
                     this.image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     this.image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     blit, VK_FILTER_LINEAR);
@@ -187,7 +189,7 @@ public class Texture {
                     .srcAccessMask(VK_ACCESS_TRANSFER_READ_BIT)
                     .dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
 
-            vkCmdPipelineBarrier(cmd.getVkCommandBuffer(),
+            vkCmdPipelineBarrier(cmd.vk(),
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                     null, null, barrier);
 
@@ -202,12 +204,12 @@ public class Texture {
                 .srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT)
                 .dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
 
-        vkCmdPipelineBarrier(cmd.getVkCommandBuffer(),
+        vkCmdPipelineBarrier(cmd.vk(),
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                 null, null, barrier);
     }
 
-    private void recordImageTransition(MemoryStack stack, CommandBuffer cmd) {
+    private void recordImageTransition(MemoryStack stack, CmdBuffer cmd) {
 
         var barrier = VkImageMemoryBarrier.calloc(1, stack)
                 .sType$Default()
@@ -243,19 +245,19 @@ public class Texture {
         barrier.srcAccessMask(srcAccessMask);
         barrier.dstAccessMask(dstAccessMask);
 
-        vkCmdPipelineBarrier(cmd.getVkCommandBuffer(), srcStage, dstStage, 0, null, null, barrier);
+        vkCmdPipelineBarrier(cmd.vk(), srcStage, dstStage, 0, null, null, barrier);
     }
 
-    public void recordTextureTransition(CommandBuffer cmd) {
+    public void recordTextureTransition(CmdBuffer cmd) {
         if (this.stgBuffer != null && !this.recordedTransition) {
-            Logger.debug("Recording transition for texture [{}]", this.fileName);
+            LOGGER.info("Recording transition for texture [{}]", this.fileName);
             this.recordedTransition = true;
             try (var stack = MemoryStack.stackPush()) {
                 recordImageTransition(stack, cmd);
                 recordCopyBuffer(stack, cmd, this.stgBuffer);
                 recordGenerateMipMaps(stack, cmd);
             }
-        } else Logger.debug("Texture [{}] has already been transitioned", this.fileName);
+        } else LOGGER.info("Texture [{}] has already been transitioned", this.fileName);
     }
 
     private void setHasTransparencies(ByteBuffer buf) {

@@ -36,7 +36,8 @@ subprojects {
         implementation("com.thebombzen:jxlatte:1.1.0")
         implementation("com.google.flatbuffers:flatbuffers-java:23.3.3")
 
-        runtimeOnly("org.slf4j:slf4j-simple:2.0.7")
+        runtimeOnly("org.apache.logging.log4j:log4j-core:2.20.0")
+        runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
         runtimeOnly("org.lwjgl:lwjgl::$lwjglNatives")
     }
 

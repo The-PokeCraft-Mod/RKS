@@ -32,7 +32,7 @@ public class AttachmentsDescriptorSet extends DescriptorSet {
                     .pSetLayouts(pDescriptorSetLayout);
 
             var pDescriptorSet = stack.mallocLong(1);
-            ok(vkAllocateDescriptorSets(this.device.getVkDevice(), allocInfo, pDescriptorSet),
+            ok(vkAllocateDescriptorSets(this.device.vk(), allocInfo, pDescriptorSet),
                     "Failed to create descriptor set");
 
             this.vkDescriptorSet = pDescriptorSet.get(0);
@@ -69,7 +69,7 @@ public class AttachmentsDescriptorSet extends DescriptorSet {
                         .pImageInfo(imageInfo);
             }
 
-            vkUpdateDescriptorSets(this.device.getVkDevice(), descrBuffer, null);
+            vkUpdateDescriptorSets(this.device.vk(), descrBuffer, null);
         }
     }
 }

@@ -1,11 +1,13 @@
 package com.thepokecraftmod.renderer;
 
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Properties;
 
 public class Settings {
+    private static final Logger LOGGER = LoggerFactory.getLogger("RKS Settings");
     private static final float DEFAULT_FOV = 60.0f;
     private static final int DEFAULT_JOINT_MATRICES_BUF = 2000000;
     private static final int DEFAULT_MAX_ANIM_WEIGHTS_BUF = 100000;
@@ -68,7 +70,7 @@ public class Settings {
             this.maxAnimWeightsBuffer = Integer.parseInt(props.getOrDefault("maxAnimWeightsBuffer", DEFAULT_MAX_ANIM_WEIGHTS_BUF).toString());
             this.maxJointMatricesBuffer = Integer.parseInt(props.getOrDefault("maxJointMatricesBuffer", DEFAULT_JOINT_MATRICES_BUF).toString());
         } catch (IOException e) {
-            Logger.error("Could not read [{}] properties file", FILENAME, e);
+            LOGGER.error("Could not read [{}] properties file", FILENAME, e);
         }
     }
 

@@ -35,13 +35,13 @@ public class TextureSampler {
                     .maxAnisotropy(MAX_ANISOTROPY);
 
             var lp = stack.mallocLong(1);
-            VkUtils.ok(vkCreateSampler(device.getVkDevice(), samplerInfo, null, lp), "Failed to create sampler");
+            VkUtils.ok(vkCreateSampler(device.vk(), samplerInfo, null, lp), "Failed to create sampler");
             this.vkSampler = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroySampler(this.device.getVkDevice(), this.vkSampler, null);
+        vkDestroySampler(this.device.vk(), this.vkSampler, null);
     }
 
     public long getVkSampler() {

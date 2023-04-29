@@ -66,14 +66,14 @@ public class ShadowsRenderPass {
                     .pDependencies(subpassDependencies);
 
             var lp = stack.mallocLong(1);
-            ok(vkCreateRenderPass(device.getVkDevice(), renderPassInfo, null, lp),
+            ok(vkCreateRenderPass(device.vk(), renderPassInfo, null, lp),
                     "Failed to create render pass");
             this.vkRenderPass = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyRenderPass(this.device.getVkDevice(), this.vkRenderPass, null);
+        vkDestroyRenderPass(this.device.vk(), this.vkRenderPass, null);
     }
 
     public long getVkRenderPass() {

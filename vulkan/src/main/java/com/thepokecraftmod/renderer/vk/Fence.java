@@ -18,18 +18,18 @@ public class Fence {
                     .flags(signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0);
 
             var lp = stack.mallocLong(1);
-            VkUtils.ok(vkCreateFence(device.getVkDevice(), fenceCreateInfo, null, lp),
+            VkUtils.ok(vkCreateFence(device.vk(), fenceCreateInfo, null, lp),
                     "Failed to create semaphore");
             this.vkFence = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyFence(this.device.getVkDevice(), this.vkFence, null);
+        vkDestroyFence(this.device.vk(), this.vkFence, null);
     }
 
     public void waitForFence() {
-        vkWaitForFences(this.device.getVkDevice(), this.vkFence, true, Long.MAX_VALUE);
+        vkWaitForFences(this.device.vk(), this.vkFence, true, Long.MAX_VALUE);
     }
 
     public long getVkFence() {
@@ -37,7 +37,7 @@ public class Fence {
     }
 
     public void reset() {
-        vkResetFences(this.device.getVkDevice(), this.vkFence);
+        vkResetFences(this.device.vk(), this.vkFence);
     }
 
 }

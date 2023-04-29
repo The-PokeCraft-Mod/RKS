@@ -4,33 +4,33 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
-public class CommandBuffer {
-    private final CommandPool commandPool;
+public class CmdBuffer implements VkWrapper<VkCommandBuffer> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CmdBuffer.class);
+    private final CmdPool cmdPool;
     private final boolean oneTimeSubmit;
-    private final VkCommandBuffer vkCommandBuffer;
+    private final VkCommandBuffer cmdBuffer;
 
-    public CommandBuffer(CommandPool commandPool, boolean primary, boolean oneTimeSubmit) {
-        Logger.trace("Creating command buffer");
-        this.commandPool = commandPool;
+    public CmdBuffer(CmdPool cmdPool, boolean primary, boolean oneTimeSubmit) {
+        LOGGER.debug("Creating command buffer");
+        this.cmdPool = cmdPool;
         this.oneTimeSubmit = oneTimeSubmit;
-        var vkDevice = commandPool.getDevice().getVkDevice();
+        var vkDevice = cmdPool.getDevice().vk();
 
         try (var stack = MemoryStack.stackPush()) {
             var cmdBufAllocateInfo = VkCommandBufferAllocateInfo.calloc(stack)
                     .sType$Default()
-                    .commandPool(commandPool.getVkCommandPool())
+                    .commandPool(cmdPool.vk())
                     .level(primary ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY)
                     .commandBufferCount(1);
             var pb = stack.mallocPointer(1);
-            ok(vkAllocateCommandBuffers(vkDevice, cmdBufAllocateInfo, pb),
-                    "Failed to allocate render command buffer");
-
-            this.vkCommandBuffer = new VkCommandBuffer(pb.get(0), vkDevice);
+            ok(vkAllocateCommandBuffers(vkDevice, cmdBufAllocateInfo, pb), "Failed to allocate render command buffer");
+            this.cmdBuffer = new VkCommandBuffer(pb.get(0), vkDevice);
         }
     }
 
@@ -39,33 +39,34 @@ public class CommandBuffer {
             var cmdBufInfo = VkCommandBufferBeginInfo.calloc(stack)
                     .sType$Default();
             if (this.oneTimeSubmit) cmdBufInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            ok(vkBeginCommandBuffer(this.vkCommandBuffer, cmdBufInfo), "Failed to begin command buffer");
+            ok(vkBeginCommandBuffer(this.cmdBuffer, cmdBufInfo), "Failed to begin command buffer");
         }
     }
 
+    @Override
     public void close() {
-        Logger.trace("Destroying command buffer");
-        vkFreeCommandBuffers(this.commandPool.getDevice().getVkDevice(), this.commandPool.getVkCommandPool(),
-                this.vkCommandBuffer);
+        LOGGER.debug("Closing command buffer");
+        vkFreeCommandBuffers(this.cmdPool.getDevice().vk(), this.cmdPool.vk(), this.cmdBuffer);
     }
 
     public void endRecording() {
-        ok(vkEndCommandBuffer(this.vkCommandBuffer), "Failed to end command buffer");
+        ok(vkEndCommandBuffer(this.cmdBuffer), "Failed to end command buffer");
     }
 
-    public VkCommandBuffer getVkCommandBuffer() {
-        return this.vkCommandBuffer;
+    @Override
+    public VkCommandBuffer vk() {
+        return this.cmdBuffer;
     }
 
     public void reset() {
-        vkResetCommandBuffer(this.vkCommandBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        vkResetCommandBuffer(this.cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     }
 
     public void submitAndWait(Device device, Queue queue) {
         var fence = new Fence(device, true);
         fence.reset();
         try (var stack = MemoryStack.stackPush()) {
-            queue.submit(stack.pointers(this.vkCommandBuffer), null, null, null, fence);
+            queue.submit(stack.pointers(this.cmdBuffer), null, null, null, fence);
         }
         fence.waitForFence();
         fence.close();

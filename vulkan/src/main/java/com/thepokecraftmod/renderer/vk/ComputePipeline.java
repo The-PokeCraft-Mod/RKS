@@ -6,20 +6,21 @@ import org.lwjgl.vulkan.VkComputePipelineCreateInfo;
 import org.lwjgl.vulkan.VkPipelineLayoutCreateInfo;
 import org.lwjgl.vulkan.VkPipelineShaderStageCreateInfo;
 import org.lwjgl.vulkan.VkPushConstantRange;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 
 public class ComputePipeline {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);
     private final Device device;
     private final long vkPipeline;
     private final long vkPipelineLayout;
 
     public ComputePipeline(PipelineCache pipelineCache, PipeLineCreationInfo pipeLineCreationInfo) {
-        Logger.debug("Creating compute pipeline");
-        this.device = pipelineCache.getDevice();
         try (var stack = MemoryStack.stackPush()) {
+            LOGGER.info("Creating compute pipeline");
+            this.device = pipelineCache.getDevice();
             var lp = stack.callocLong(1);
             var main = stack.UTF8("main");
 
@@ -47,7 +48,7 @@ public class ComputePipeline {
                     .sType$Default()
                     .pSetLayouts(ppLayout)
                     .pPushConstantRanges(pushConstantRanges);
-            VkUtils.ok(vkCreatePipelineLayout(this.device.getVkDevice(), pPipelineLayoutCreateInfo, null, lp),
+            VkUtils.ok(vkCreatePipelineLayout(this.device.vk(), pPipelineLayoutCreateInfo, null, lp),
                     "Failed to create pipeline layout");
             this.vkPipelineLayout = lp.get(0);
 
@@ -55,15 +56,15 @@ public class ComputePipeline {
                     .sType$Default()
                     .stage(shaderStage)
                     .layout(this.vkPipelineLayout);
-            VkUtils.ok(vkCreateComputePipelines(this.device.getVkDevice(), pipelineCache.getVkPipelineCache(), computePipelineCreateInfo, null, lp), "Error creating compute pipeline");
+            VkUtils.ok(vkCreateComputePipelines(this.device.vk(), pipelineCache.getVkPipelineCache(), computePipelineCreateInfo, null, lp), "Error creating compute pipeline");
             this.vkPipeline = lp.get(0);
         }
     }
 
     public void close() {
-        Logger.debug("Destroying compute pipeline");
-        vkDestroyPipelineLayout(this.device.getVkDevice(), this.vkPipelineLayout, null);
-        vkDestroyPipeline(this.device.getVkDevice(), this.vkPipeline, null);
+        LOGGER.info("Closing compute pipeline");
+        vkDestroyPipelineLayout(this.device.vk(), this.vkPipelineLayout, null);
+        vkDestroyPipeline(this.device.vk(), this.vkPipeline, null);
     }
 
     public long getVkPipeline() {

@@ -1,7 +1,6 @@
 package com.thepokecraftmod.renderer.impl;
 
 import org.lwjgl.system.MemoryStack;
-import org.tinylog.Logger;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.impl.animation.GpuAnimator;
@@ -11,6 +10,8 @@ import com.thepokecraftmod.renderer.impl.shadows.ShadowPass;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.vk.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,13 +19,13 @@ import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-public class Render {
-
+public class Renderer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Renderer.class);
     private final GpuAnimator computeAnimator;
     private final GeometryPass geometryPass;
     private final LightPass lightPass;
     private final ShadowPass shadowPass;
-    private final CommandPool commandPool;
+    private final CmdPool cmdPool;
 
     private final Device device;
     private final GlobalBuffers globalBuffers;
@@ -36,12 +37,12 @@ public class Render {
     private final Surface surface;
     private final TextureCache textureCache;
     private final List<VulkanModel> vulkanModels;
-    private CommandBuffer[] commandBuffers;
+    private CmdBuffer[] cmdBuffers;
     public long entitiesLoadedTimeStamp;
     private Fence[] fences;
-    private SwapChain swapChain;
+    private Swapchain swapChain;
 
-    public Render(Window window, Scene scene) {
+    public Renderer(Window window, Scene scene) {
         var engProps = Settings.getInstance();
         this.instance = new Instance(engProps.isValidate(), window != null);
         this.physicalDevice = PhysicalDevice.createPhysicalDevice(this.instance, engProps.getPhysDeviceName());
@@ -49,8 +50,8 @@ public class Render {
         this.surface = new Surface(this.physicalDevice, window.getWindowHandle());
         this.graphQueue = new Queue.GraphicsQueue(this.device, 0);
         this.presentQueue = new Queue.PresentQueue(this.device, this.surface, 0);
-        this.swapChain = new SwapChain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
-        this.commandPool = new CommandPool(this.device, this.graphQueue.getQueueFamilyIndex());
+        this.swapChain = new Swapchain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
+        this.cmdPool = new CmdPool(this.device, this.graphQueue.getQueueFamilyIndex());
         this.pipelineCache = new PipelineCache(this.device);
         this.vulkanModels = new ArrayList<>();
         this.textureCache = new TextureCache();
@@ -59,17 +60,17 @@ public class Render {
         this.shadowPass = new ShadowPass(this.swapChain, this.pipelineCache, scene);
         var attachments = new ArrayList<>(this.geometryPass.getAttachments());
         attachments.add(this.shadowPass.getDepthAttachment());
-        this.lightPass = new LightPass(this.swapChain, this.commandPool, this.pipelineCache, attachments, scene);
-        this.computeAnimator = new GpuAnimator(this.commandPool, this.pipelineCache);
+        this.lightPass = new LightPass(this.swapChain, this.cmdPool, this.pipelineCache, attachments, scene);
+        this.computeAnimator = new GpuAnimator(this.cmdPool, this.pipelineCache);
         this.entitiesLoadedTimeStamp = 0;
         createCommandBuffers();
     }
 
-    private CommandBuffer acquireCurrentCommandBuffer() {
+    private CmdBuffer acquireCurrentCommandBuffer() {
         var idx = this.swapChain.getCurrentFrame();
 
         var fence = this.fences[idx];
-        var commandBuffer = this.commandBuffers[idx];
+        var commandBuffer = this.cmdBuffers[idx];
 
         fence.waitForFence();
         fence.reset();
@@ -87,9 +88,9 @@ public class Render {
         this.computeAnimator.close();
         this.shadowPass.close();
         this.geometryPass.close();
-        Arrays.stream(this.commandBuffers).forEach(CommandBuffer::close);
+        Arrays.stream(this.cmdBuffers).forEach(CmdBuffer::close);
         Arrays.stream(this.fences).forEach(Fence::close);
-        this.commandPool.close();
+        this.cmdPool.close();
         this.swapChain.close();
         this.surface.close();
         this.globalBuffers.close();
@@ -100,26 +101,26 @@ public class Render {
 
     private void createCommandBuffers() {
         var numImages = this.swapChain.getNumImages();
-        this.commandBuffers = new CommandBuffer[numImages];
+        this.cmdBuffers = new CmdBuffer[numImages];
         this.fences = new Fence[numImages];
 
         for (var i = 0; i < numImages; i++) {
-            this.commandBuffers[i] = new CommandBuffer(this.commandPool, true, false);
+            this.cmdBuffers[i] = new CmdBuffer(this.cmdPool, true, false);
             this.fences[i] = new Fence(this.device, true);
         }
     }
 
     public void loadModels(List<ModelData> models) {
-        Logger.debug("Loading {} model(s)", models.size());
-        this.vulkanModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.commandPool, this.graphQueue));
-        Logger.debug("Loaded {} model(s)", models.size());
+        LOGGER.info("Loading {} model(s)", models.size());
+        this.vulkanModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.cmdPool, this.graphQueue));
+        LOGGER.info("Loaded {} model(s)", models.size());
 
         this.geometryPass.loadModels(this.textureCache);
     }
 
     private void recordCommands() {
         var idx = 0;
-        for (var commandBuffer : this.commandBuffers) {
+        for (var commandBuffer : this.cmdBuffers) {
             commandBuffer.reset();
             commandBuffer.beginRecording();
             this.geometryPass.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
@@ -133,7 +134,7 @@ public class Render {
         if (this.entitiesLoadedTimeStamp < scene.getEntitiesLoadedTimeStamp()) {
             this.entitiesLoadedTimeStamp = scene.getEntitiesLoadedTimeStamp();
             this.device.waitIdle();
-            this.globalBuffers.loadEntities(this.vulkanModels, scene, this.commandPool, this.graphQueue, this.swapChain.getNumImages());
+            this.globalBuffers.loadEntities(this.vulkanModels, scene, this.cmdPool, this.graphQueue, this.swapChain.getNumImages());
             this.computeAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
             recordCommands();
         }
@@ -169,7 +170,7 @@ public class Render {
         this.graphQueue.waitIdle();
 
         this.swapChain.close();
-        this.swapChain = new SwapChain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());
+        this.swapChain = new Swapchain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());
         this.geometryPass.resize(this.swapChain);
         this.shadowPass.resize(this.swapChain);
         recordCommands();
@@ -178,12 +179,12 @@ public class Render {
         this.lightPass.resize(this.swapChain, attachments);
     }
 
-    public void submitSceneCommand(Queue queue, CommandBuffer commandBuffer) {
+    public void submitSceneCommand(Queue queue, CmdBuffer cmdBuffer) {
         try (var stack = MemoryStack.stackPush()) {
             var idx = this.swapChain.getCurrentFrame();
             var currentFence = this.fences[idx];
             var syncSemaphores = this.swapChain.getSyncSemaphoresList()[idx];
-            queue.submit(stack.pointers(commandBuffer.getVkCommandBuffer()),
+            queue.submit(stack.pointers(cmdBuffer.vk()),
                     stack.longs(syncSemaphores.imgAcquisitionSemaphore().getVkSemaphore()),
                     stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT),
                     stack.longs(syncSemaphores.geometryCompleteSemaphore().getVkSemaphore()), currentFence);

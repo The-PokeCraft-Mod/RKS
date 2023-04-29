@@ -97,7 +97,7 @@ public class Instance implements Closeable, VkWrapper<VkInstance> {
                         LOGGER.warn("[Vulkan] {}", message[2]);
                     else if ((severity & EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
                         LOGGER.error("[Vulkan] {}", message[2]);
-                    else LOGGER.debug("[Vulkan] {}", message[2]);
+                    else LOGGER.info("[Vulkan] {}", message[2]);
 
                     return VK10.VK_FALSE;
                 });

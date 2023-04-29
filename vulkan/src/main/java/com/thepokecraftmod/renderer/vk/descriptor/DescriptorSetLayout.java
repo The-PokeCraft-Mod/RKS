@@ -6,12 +6,13 @@ import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutBinding;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutCreateInfo;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 
 public abstract class DescriptorSetLayout implements VkWrapper<Long> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(DescriptorSetLayout.class);
     private final Device device;
     protected long layout;
 
@@ -21,8 +22,8 @@ public abstract class DescriptorSetLayout implements VkWrapper<Long> {
 
     @Override
     public void close() {
-        Logger.debug("Destroying descriptor set layout");
-        vkDestroyDescriptorSetLayout(this.device.getVkDevice(), this.layout, null);
+        LOGGER.info("Closing descriptor set layout");
+        vkDestroyDescriptorSetLayout(this.device.vk(), this.layout, null);
     }
 
     @Override
@@ -59,7 +60,7 @@ public abstract class DescriptorSetLayout implements VkWrapper<Long> {
                         .pBindings(layoutBindings);
 
                 var pSetLayout = stack.mallocLong(1);
-                VkUtils.ok(vkCreateDescriptorSetLayout(device.getVkDevice(), layoutInfo, null, pSetLayout),
+                VkUtils.ok(vkCreateDescriptorSetLayout(device.vk(), layoutInfo, null, pSetLayout),
                         "Failed to create descriptor set layout");
                 super.layout = pSetLayout.get(0);
             }

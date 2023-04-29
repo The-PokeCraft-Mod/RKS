@@ -40,10 +40,10 @@ public class ShadowPass {
     private DescriptorSet.UniformDescriptorSet[] projMatrixDescriptorSet;
     private ShaderProgram shaderProgram;
     private VulkanBuffer[] shadowsUniforms;
-    private SwapChain swapChain;
+    private Swapchain swapChain;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
 
-    public ShadowPass(SwapChain swapChain, PipelineCache pipelineCache, Scene scene) {
+    public ShadowPass(Swapchain swapChain, PipelineCache pipelineCache, Scene scene) {
         this.swapChain = swapChain;
         this.scene = scene;
         this.device = swapChain.getDevice();
@@ -122,7 +122,7 @@ public class ShadowPass {
         return this.cascadeShadows;
     }
 
-    public void recordCommandBuffer(CommandBuffer commandBuffer, GlobalBuffers globalBuffers, int idx) {
+    public void recordCommandBuffer(CmdBuffer cmdBuffer, GlobalBuffers globalBuffers, int idx) {
         try (var stack = MemoryStack.stackPush()) {
             var clearValues = VkClearValue.calloc(1, stack);
             clearValues.apply(0, v -> v.depthStencil().depth(1.0f));
@@ -130,7 +130,7 @@ public class ShadowPass {
             var settings = Settings.getInstance();
             var shadowMapSize = settings.getShadowMapSize();
 
-            var cmdHandle = commandBuffer.getVkCommandBuffer();
+            var cmdHandle = cmdBuffer.vk();
 
             var viewport = VkViewport.calloc(1, stack)
                     .x(0)
@@ -215,7 +215,7 @@ public class ShadowPass {
         }
     }
 
-    public void resize(SwapChain swapChain) {
+    public void resize(Swapchain swapChain) {
         this.swapChain = swapChain;
         CascadeShadow.updateCascadeShadows(this.cascadeShadows, this.scene);
     }

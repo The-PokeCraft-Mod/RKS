@@ -26,14 +26,14 @@ public class FrameBuffer {
                     .renderPass(renderPass);
 
             var lp = stack.mallocLong(1);
-            ok(vkCreateFramebuffer(device.getVkDevice(), fci, null, lp),
+            ok(vkCreateFramebuffer(device.vk(), fci, null, lp),
                     "Failed to create FrameBuffer");
             this.vkFrameBuffer = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyFramebuffer(this.device.getVkDevice(), this.vkFrameBuffer, null);
+        vkDestroyFramebuffer(this.device.vk(), this.vkFrameBuffer, null);
     }
 
     public long getVkFrameBuffer() {

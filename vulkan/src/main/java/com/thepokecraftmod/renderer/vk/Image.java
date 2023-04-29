@@ -40,12 +40,12 @@ public class Image {
                     .usage(imageData.usage);
 
             var lp = stack.mallocLong(1);
-            ok(vkCreateImage(device.getVkDevice(), imageCreateInfo, null, lp), "Failed to create image");
+            ok(vkCreateImage(device.vk(), imageCreateInfo, null, lp), "Failed to create image");
             this.vkImage = lp.get(0);
 
             // Get memory requirements for this object
             var memReqs = VkMemoryRequirements.calloc(stack);
-            vkGetImageMemoryRequirements(device.getVkDevice(), this.vkImage, memReqs);
+            vkGetImageMemoryRequirements(device.vk(), this.vkImage, memReqs);
 
             // Select memory size and type
             var memAlloc = VkMemoryAllocateInfo.calloc(stack)
@@ -55,18 +55,18 @@ public class Image {
                             memReqs.memoryTypeBits(), 0));
 
             // Allocate memory
-            ok(vkAllocateMemory(device.getVkDevice(), memAlloc, null, lp), "Failed to allocate memory");
+            ok(vkAllocateMemory(device.vk(), memAlloc, null, lp), "Failed to allocate memory");
             this.vkMemory = lp.get(0);
 
             // Bind memory
-            ok(vkBindImageMemory(device.getVkDevice(), this.vkImage, this.vkMemory, 0),
+            ok(vkBindImageMemory(device.vk(), this.vkImage, this.vkMemory, 0),
                     "Failed to bind image memory");
         }
     }
 
     public void close() {
-        vkDestroyImage(this.device.getVkDevice(), this.vkImage, null);
-        vkFreeMemory(this.device.getVkDevice(), this.vkMemory, null);
+        vkDestroyImage(this.device.vk(), this.vkImage, null);
+        vkFreeMemory(this.device.vk(), this.vkMemory, null);
     }
 
     public int getFormat() {

@@ -3,14 +3,16 @@ package com.thepokecraftmod.renderer.vk;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
-import org.tinylog.Logger;
 import com.thepokecraftmod.renderer.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class SwapChain {
+public class Swapchain {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Swapchain.class);
     private final Device device;
     private final ImageView[] imageViews;
     private final SurfaceFormat surfaceFormat;
@@ -20,8 +22,8 @@ public class SwapChain {
 
     private int currentFrame;
 
-    public SwapChain(Device device, Surface surface, Window window, int requestedImages, boolean vsync) {
-        Logger.debug("Creating Vulkan SwapChain");
+    public Swapchain(Device device, Surface surface, Window window, int requestedImages, boolean vsync) {
+        LOGGER.info("Creating Swapchain");
         this.device = device;
         try (var stack = MemoryStack.stackPush()) {
 
@@ -29,7 +31,7 @@ public class SwapChain {
 
             // Get surface capabilities
             var surfCapabilities = VkSurfaceCapabilitiesKHR.calloc(stack);
-            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice().getVkPhysicalDevice(),
+            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice().vk(),
                     surface.getVkSurface(), surfCapabilities), "Failed to get surface capabilities");
 
             var numImages = calcNumImages(surfCapabilities, requestedImages);
@@ -54,7 +56,7 @@ public class SwapChain {
             if (vsync) vkSwapchainCreateInfo.presentMode(KHRSurface.VK_PRESENT_MODE_FIFO_KHR);
             else vkSwapchainCreateInfo.presentMode(KHRSurface.VK_PRESENT_MODE_IMMEDIATE_KHR);
             var lp = stack.mallocLong(1);
-            VkUtils.ok(KHRSwapchain.vkCreateSwapchainKHR(device.getVkDevice(), vkSwapchainCreateInfo, null, lp),
+            VkUtils.ok(KHRSwapchain.vkCreateSwapchainKHR(device.vk(), vkSwapchainCreateInfo, null, lp),
                     "Failed to create swap chain");
             this.vkSwapChain = lp.get(0);
 
@@ -70,7 +72,7 @@ public class SwapChain {
         var resize = false;
         try (var stack = MemoryStack.stackPush()) {
             var ip = stack.mallocInt(1);
-            var err = KHRSwapchain.vkAcquireNextImageKHR(this.device.getVkDevice(), this.vkSwapChain, ~0L,
+            var err = KHRSwapchain.vkAcquireNextImageKHR(this.device.vk(), this.vkSwapChain, ~0L,
                     this.syncSemaphoresList[this.currentFrame].imgAcquisitionSemaphore().getVkSemaphore(), MemoryUtil.NULL, ip);
             if (err == KHRSwapchain.VK_ERROR_OUT_OF_DATE_KHR) resize = true;
             else if (err == KHRSwapchain.VK_SUBOPTIMAL_KHR) {
@@ -88,7 +90,7 @@ public class SwapChain {
         var result = minImages;
         if (maxImages != 0) result = Math.min(requestedImages, maxImages);
         result = Math.max(result, minImages);
-        Logger.debug("Requested [{}] images, got [{}] images. Surface capabilities, maxImages: [{}], minImages [{}]",
+        LOGGER.info("Requested [{}] images, got [{}] images. Surface capabilities, maxImages: [{}], minImages [{}]",
                 requestedImages, result, maxImages, minImages);
 
         return result;
@@ -100,13 +102,13 @@ public class SwapChain {
         try (var stack = MemoryStack.stackPush()) {
 
             var ip = stack.mallocInt(1);
-            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice.getVkPhysicalDevice(),
+            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice.vk(),
                     surface.getVkSurface(), ip, null), "Failed to get the number surface formats");
             var numFormats = ip.get(0);
             if (numFormats <= 0) throw new RuntimeException("No surface formats retrieved");
 
             var surfaceFormats = VkSurfaceFormatKHR.calloc(numFormats, stack);
-            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice.getVkPhysicalDevice(),
+            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice.vk(),
                     surface.getVkSurface(), ip, surfaceFormats), "Failed to get surface formats");
 
             imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
@@ -142,7 +144,7 @@ public class SwapChain {
     }
 
     public void close() {
-        Logger.debug("Destroying Vulkan SwapChain");
+        LOGGER.info("Closing Vulkan SwapChain");
         this.swapChainExtent.free();
 
         var size = this.imageViews != null ? this.imageViews.length : 0;
@@ -151,19 +153,19 @@ public class SwapChain {
             this.syncSemaphoresList[i].close();
         }
 
-        KHRSwapchain.vkDestroySwapchainKHR(this.device.getVkDevice(), this.vkSwapChain, null);
+        KHRSwapchain.vkDestroySwapchainKHR(this.device.vk(), this.vkSwapChain, null);
     }
 
     private ImageView[] createImageViews(MemoryStack stack, Device device, long swapChain, int format) {
         ImageView[] result;
 
         var ip = stack.mallocInt(1);
-        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.getVkDevice(), swapChain, ip, null),
+        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, null),
                 "Failed to get number of surface images");
         var numImages = ip.get(0);
 
         var swapChainImages = stack.mallocLong(numImages);
-        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.getVkDevice(), swapChain, ip, swapChainImages),
+        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, swapChainImages),
                 "Failed to get surface images");
 
         result = new ImageView[numImages];

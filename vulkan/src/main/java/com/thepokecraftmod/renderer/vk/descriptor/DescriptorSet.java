@@ -35,7 +35,7 @@ public abstract class DescriptorSet {
                         .pSetLayouts(pDescriptorSetLayout);
 
                 var pDescriptorSet = stack.mallocLong(1);
-                VkUtils.ok(vkAllocateDescriptorSets(device.getVkDevice(), allocInfo, pDescriptorSet), "Failed to create descriptor set");
+                VkUtils.ok(vkAllocateDescriptorSets(device.vk(), allocInfo, pDescriptorSet), "Failed to create descriptor set");
 
                 this.vkDescriptorSet = pDescriptorSet.get(0);
 
@@ -54,7 +54,7 @@ public abstract class DescriptorSet {
                         .descriptorCount(1)
                         .pBufferInfo(bufferInfo);
 
-                vkUpdateDescriptorSets(device.getVkDevice(), descrBuffer, null);
+                vkUpdateDescriptorSets(device.vk(), descrBuffer, null);
             }
         }
     }

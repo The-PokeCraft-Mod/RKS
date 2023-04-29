@@ -19,7 +19,7 @@ public class MemoryAllocator {
             var createInfo = VmaAllocatorCreateInfo.calloc(stack)
                     .instance(instance.vk())
                     .device(vkDevice)
-                    .physicalDevice(physicalDevice.getVkPhysicalDevice())
+                    .physicalDevice(physicalDevice.vk())
                     .pVulkanFunctions(vmaVulkanFunctions);
 
             VkUtils.ok(vmaCreateAllocator(createInfo, pAllocator), "Failed to create VMA allocator");

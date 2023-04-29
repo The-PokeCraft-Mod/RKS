@@ -3,18 +3,19 @@ package com.thepokecraftmod.renderer.vk;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 
 public class Pipeline {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(Pipeline.class);
     private final Device device;
     private final long vkPipeline;
     private final long vkPipelineLayout;
 
     public Pipeline(PipelineCache pipelineCache, PipeLineCreationInfo pipeLineCreationInfo) {
-        Logger.debug("Creating pipeline");
+        LOGGER.info("Creating pipeline");
         this.device = pipelineCache.getDevice();
         try (var stack = MemoryStack.stackPush()) {
             var lp = stack.mallocLong(1);
@@ -109,7 +110,7 @@ public class Pipeline {
                     .pSetLayouts(ppLayout)
                     .pPushConstantRanges(vpcr);
 
-            VkUtils.ok(vkCreatePipelineLayout(this.device.getVkDevice(), pPipelineLayoutCreateInfo, null, lp),
+            VkUtils.ok(vkCreatePipelineLayout(this.device.vk(), pPipelineLayoutCreateInfo, null, lp),
                     "Failed to create pipeline layout");
             this.vkPipelineLayout = lp.get(0);
 
@@ -126,16 +127,16 @@ public class Pipeline {
                     .layout(this.vkPipelineLayout)
                     .renderPass(pipeLineCreationInfo.vkRenderPass);
             if (ds != null) pipeline.pDepthStencilState(ds);
-            VkUtils.ok(vkCreateGraphicsPipelines(this.device.getVkDevice(), pipelineCache.getVkPipelineCache(), pipeline, null, lp),
+            VkUtils.ok(vkCreateGraphicsPipelines(this.device.vk(), pipelineCache.getVkPipelineCache(), pipeline, null, lp),
                     "Error creating graphics pipeline");
             this.vkPipeline = lp.get(0);
         }
     }
 
     public void close() {
-        Logger.debug("Destroying pipeline");
-        vkDestroyPipelineLayout(this.device.getVkDevice(), this.vkPipelineLayout, null);
-        vkDestroyPipeline(this.device.getVkDevice(), this.vkPipeline, null);
+        LOGGER.info("Closing pipeline");
+        vkDestroyPipelineLayout(this.device.vk(), this.vkPipelineLayout, null);
+        vkDestroyPipeline(this.device.vk(), this.vkPipeline, null);
     }
 
     public long getVkPipeline() {

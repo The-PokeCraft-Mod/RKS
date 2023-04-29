@@ -5,7 +5,8 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.KHRSurface;
 import org.lwjgl.vulkan.VkQueue;
 import org.lwjgl.vulkan.VkSubmitInfo;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -14,19 +15,19 @@ import static org.lwjgl.vulkan.VK11.*;
 import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class Queue {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(Queue.class);
     private final int queueFamilyIndex;
     private final VkQueue vkQueue;
 
     public Queue(Device device, int queueFamilyIndex, int queueIndex) {
-        Logger.debug("Creating queue");
+        LOGGER.info("Creating queue");
 
         this.queueFamilyIndex = queueFamilyIndex;
         try (var stack = MemoryStack.stackPush()) {
             var pQueue = stack.mallocPointer(1);
-            vkGetDeviceQueue(device.getVkDevice(), queueFamilyIndex, queueIndex, pQueue);
+            vkGetDeviceQueue(device.vk(), queueFamilyIndex, queueIndex, pQueue);
             var queue = pQueue.get(0);
-            this.vkQueue = new VkQueue(queue, device.getVkDevice());
+            this.vkQueue = new VkQueue(queue, device.vk());
         }
     }
 
@@ -124,7 +125,7 @@ public class Queue {
                 var numQueuesFamilies = queuePropsBuff.capacity();
                 var intBuff = stack.mallocInt(1);
                 for (var i = 0; i < numQueuesFamilies; i++) {
-                    KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice.getVkPhysicalDevice(),
+                    KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice.vk(),
                             i, surface.getVkSurface(), intBuff);
                     var supportsPresentation = intBuff.get(0) == VK_TRUE;
                     if (supportsPresentation) {

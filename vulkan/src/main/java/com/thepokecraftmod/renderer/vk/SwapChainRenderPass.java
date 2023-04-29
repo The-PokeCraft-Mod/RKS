@@ -8,10 +8,10 @@ import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class SwapChainRenderPass {
 
-    private final SwapChain swapChain;
+    private final Swapchain swapChain;
     private final long vkRenderPass;
 
-    public SwapChainRenderPass(SwapChain swapChain, int depthImageFormat) {
+    public SwapChainRenderPass(Swapchain swapChain, int depthImageFormat) {
         this.swapChain = swapChain;
 
         try (var stack = MemoryStack.stackPush()) {
@@ -65,14 +65,14 @@ public class SwapChainRenderPass {
                     .pDependencies(subpassDependencies);
 
             var lp = stack.mallocLong(1);
-            ok(vkCreateRenderPass(swapChain.getDevice().getVkDevice(), renderPassInfo, null, lp),
+            ok(vkCreateRenderPass(swapChain.getDevice().vk(), renderPassInfo, null, lp),
                     "Failed to create render pass");
             this.vkRenderPass = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyRenderPass(this.swapChain.getDevice().getVkDevice(), this.vkRenderPass, null);
+        vkDestroyRenderPass(this.swapChain.getDevice().vk(), this.vkRenderPass, null);
     }
 
     public long getVkRenderPass() {

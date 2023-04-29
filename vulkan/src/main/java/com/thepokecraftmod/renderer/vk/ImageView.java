@@ -31,14 +31,14 @@ public class ImageView {
                             .baseArrayLayer(imageViewData.baseArrayLayer)
                             .layerCount(imageViewData.layerCount));
 
-            ok(vkCreateImageView(device.getVkDevice(), viewCreateInfo, null, lp),
+            ok(vkCreateImageView(device.vk(), viewCreateInfo, null, lp),
                     "Failed to create image view");
             this.vkImageView = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyImageView(this.device.getVkDevice(), this.vkImageView, null);
+        vkDestroyImageView(this.device.vk(), this.vkImageView, null);
     }
 
     public int getAspectMask() {

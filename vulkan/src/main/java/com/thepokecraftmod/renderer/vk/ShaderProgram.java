@@ -3,7 +3,8 @@ package com.thepokecraftmod.renderer.vk;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 import org.lwjgl.vulkan.VkSpecializationInfo;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +14,7 @@ import static org.lwjgl.vulkan.VK11.vkCreateShaderModule;
 import static org.lwjgl.vulkan.VK11.vkDestroyShaderModule;
 
 public class ShaderProgram {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShaderProgram.class);
     private final Device device;
     private final ShaderModule[] shaderModules;
 
@@ -27,14 +29,14 @@ public class ShaderProgram {
                 this.shaderModules[i] = new ShaderModule(shaderModuleData[i].shaderStage(), moduleHandle, shaderModuleData[i].specInfo());
             }
         } catch (IOException e) {
-            Logger.error("Error reading shader files", e);
+            LOGGER.error("Error reading shader files", e);
             throw new RuntimeException(e);
         }
     }
 
     public void close() {
         for (var shaderModule : this.shaderModules)
-            vkDestroyShaderModule(this.device.getVkDevice(), shaderModule.handle(), null);
+            vkDestroyShaderModule(this.device.vk(), shaderModule.handle(), null);
     }
 
     private long createShaderModule(byte[] code) {
@@ -46,7 +48,7 @@ public class ShaderProgram {
                     .pCode(pCode);
 
             var lp = stack.mallocLong(1);
-            VkUtils.ok(vkCreateShaderModule(this.device.getVkDevice(), moduleCreateInfo, null, lp), "Failed to create shader module");
+            VkUtils.ok(vkCreateShaderModule(this.device.vk(), moduleCreateInfo, null, lp), "Failed to create shader module");
             return lp.get(0);
         }
     }

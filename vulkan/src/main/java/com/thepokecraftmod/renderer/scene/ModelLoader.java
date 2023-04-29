@@ -5,19 +5,20 @@ import org.joml.Quaternionf;
 import org.joml.Vector4f;
 import org.lwjgl.assimp.*;
 import org.lwjgl.system.MemoryStack;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.IntBuffer;
 import java.util.*;
 
-import static org.lwjgl.assimp.Assimp.*;
 import static com.thepokecraftmod.renderer.EngineUtils.listFloatToArray;
 import static com.thepokecraftmod.renderer.EngineUtils.listIntToArray;
+import static org.lwjgl.assimp.Assimp.*;
 
 @Deprecated
 public class ModelLoader {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ModelLoader.class);
     public static final int MAX_JOINTS = 150;
     public static final int MAX_WEIGHTS = 4;
     private static final Matrix4f IDENTITY_MATRIX = new Matrix4f();
@@ -127,7 +128,7 @@ public class ModelLoader {
     }
 
     public static ModelData loadModel(String modelId, String modelPath, String texturesDir, int flags) {
-        Logger.debug("Loading model data [{}]", modelPath);
+        LOGGER.info("Loading model data [{}]", modelPath);
         if (!new File(modelPath).exists()) throw new RuntimeException("Model path does not exist [" + modelPath + "]");
         if (!new File(texturesDir).exists())
             throw new RuntimeException("Textures path does not exist [" + texturesDir + "]");
@@ -159,7 +160,7 @@ public class ModelLoader {
 
         var numAnimations = aiScene.mNumAnimations();
         if (numAnimations > 0) {
-            Logger.debug("Processing animations");
+            LOGGER.info("Processing animations");
             List<Bone> boneList = new ArrayList<>();
             List<ModelData.AnimMeshData> animMeshDataList = new ArrayList<>();
             for (var i = 0; i < numMeshes; i++) {
@@ -176,7 +177,7 @@ public class ModelLoader {
         }
 
         aiReleaseImport(aiScene);
-        Logger.debug("Loaded model [{}]", modelPath);
+        LOGGER.info("Loaded model [{}]", modelPath);
         return modelData;
     }
 

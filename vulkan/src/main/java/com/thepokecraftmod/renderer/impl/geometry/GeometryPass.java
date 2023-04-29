@@ -45,7 +45,7 @@ public class GeometryPass implements Closeable {
     private VulkanBuffer projMatrixUniform;
     private ShaderProgram shaderProgram;
     private DescriptorSetLayout.StorageDescriptorSetLayout storageDescriptorSetLayout;
-    private SwapChain swapChain;
+    private Swapchain swapChain;
     private TextureDescriptorSet textureDescriptorSet;
     private DescriptorSetLayout.SamplerDescriptorSetLayout textureDescriptorSetLayout;
     private TextureSampler textureSampler;
@@ -53,7 +53,7 @@ public class GeometryPass implements Closeable {
     private VulkanBuffer[] viewMatricesBuffer;
     private DescriptorSet.UniformDescriptorSet[] viewMatricesDescriptorSets;
 
-    public GeometryPass(SwapChain swapChain, PipelineCache pipelineCache, Scene scene, GlobalBuffers globalBuffers) {
+    public GeometryPass(Swapchain swapChain, PipelineCache pipelineCache, Scene scene, GlobalBuffers globalBuffers) {
         this.swapChain = swapChain;
         this.pipelineCache = pipelineCache;
         this.scene = scene;
@@ -148,7 +148,7 @@ public class GeometryPass implements Closeable {
         this.textureDescriptorSet = new TextureDescriptorSet(this.pools.getPool(), this.textureDescriptorSetLayout, textureList, this.textureSampler, 0);
     }
 
-    public void recordCommandBuffer(CommandBuffer commandBuffer, GlobalBuffers globalBuffers, int idx) {
+    public void recordCommandBuffer(CmdBuffer cmdBuffer, GlobalBuffers globalBuffers, int idx) {
         try (var stack = MemoryStack.stackPush()) {
             var swapChainExtent = this.swapChain.getSwapChainExtent();
             var width = swapChainExtent.width();
@@ -164,7 +164,7 @@ public class GeometryPass implements Closeable {
             clearValues.flip();
 
             var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack).sType$Default().renderPass(this.geometryFrameBuffer.getRenderPass().getVkRenderPass()).pClearValues(clearValues).renderArea(a -> a.extent().set(width, height)).framebuffer(frameBuffer.getVkFrameBuffer());
-            var cmdHandle = commandBuffer.getVkCommandBuffer();
+            var cmdHandle = cmdBuffer.vk();
 
             vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -233,7 +233,7 @@ public class GeometryPass implements Closeable {
         VkUtils.copyMatrixToBuffer(this.viewMatricesBuffer[idx], this.scene.getCamera().getViewMatrix());
     }
 
-    public void resize(SwapChain swapChain) {
+    public void resize(Swapchain swapChain) {
         VkUtils.copyMatrixToBuffer(this.projMatrixUniform, this.scene.getProjection().getProjectionMatrix());
         this.swapChain = swapChain;
         this.geometryFrameBuffer.resize(swapChain);

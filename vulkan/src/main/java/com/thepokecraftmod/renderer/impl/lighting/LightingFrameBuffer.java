@@ -1,31 +1,33 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
+import com.thepokecraftmod.renderer.vk.Device;
 import org.lwjgl.system.MemoryStack;
-import org.tinylog.Logger;
 import com.thepokecraftmod.renderer.vk.FrameBuffer;
-import com.thepokecraftmod.renderer.vk.SwapChain;
+import com.thepokecraftmod.renderer.vk.Swapchain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 public class LightingFrameBuffer {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(LightingFrameBuffer.class);
     private final LightingRenderPass lightingRenderPass;
 
     private FrameBuffer[] frameBuffers;
 
-    public LightingFrameBuffer(SwapChain swapChain) {
-        Logger.debug("Creating Lighting FrameBuffer");
+    public LightingFrameBuffer(Swapchain swapChain) {
+        LOGGER.info("Creating Lighting FrameBuffer");
         this.lightingRenderPass = new LightingRenderPass(swapChain);
         createFrameBuffers(swapChain);
     }
 
     public void close() {
-        Logger.debug("Destroying Lighting FrameBuffer");
+        LOGGER.info("Closing Lighting FrameBuffer");
         Arrays.stream(this.frameBuffers).forEach(FrameBuffer::close);
         this.lightingRenderPass.close();
     }
 
-    private void createFrameBuffers(SwapChain swapChain) {
+    private void createFrameBuffers(Swapchain swapChain) {
         try (var stack = MemoryStack.stackPush()) {
             var extent2D = swapChain.getSwapChainExtent();
             var width = extent2D.width();
@@ -50,7 +52,7 @@ public class LightingFrameBuffer {
         return this.lightingRenderPass;
     }
 
-    public void resize(SwapChain swapChain) {
+    public void resize(Swapchain swapChain) {
         Arrays.stream(this.frameBuffers).forEach(FrameBuffer::close);
         createFrameBuffers(swapChain);
     }

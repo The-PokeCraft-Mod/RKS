@@ -1,20 +1,21 @@
 package com.thepokecraftmod.renderer.impl.shadows;
 
 import org.lwjgl.system.MemoryStack;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.vk.*;
 
 import static org.lwjgl.vulkan.VK11.*;
 
 public class ShadowsFrameBuffer {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShadowsFrameBuffer.class);
     private final Attachment depthAttachment;
     private final FrameBuffer frameBuffer;
     private final ShadowsRenderPass shadowsRenderPass;
 
     public ShadowsFrameBuffer(Device device) {
-        Logger.debug("Creating ShadowsFrameBuffer");
+        LOGGER.info("Creating ShadowsFrameBuffer");
         try (var stack = MemoryStack.stackPush()) {
             var usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
             var settings = Settings.getInstance();
@@ -40,7 +41,7 @@ public class ShadowsFrameBuffer {
     }
 
     public void close() {
-        Logger.debug("Destroying ShadowsFrameBuffer");
+        LOGGER.info("Closing ShadowsFrameBuffer");
         this.shadowsRenderPass.close();
         this.depthAttachment.close();
         this.frameBuffer.close();

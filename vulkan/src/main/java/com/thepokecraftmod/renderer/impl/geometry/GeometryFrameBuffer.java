@@ -1,39 +1,40 @@
 package com.thepokecraftmod.renderer.impl.geometry;
 
 import org.lwjgl.system.MemoryStack;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.thepokecraftmod.renderer.vk.FrameBuffer;
-import com.thepokecraftmod.renderer.vk.SwapChain;
+import com.thepokecraftmod.renderer.vk.Swapchain;
 
 public class GeometryFrameBuffer {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeometryFrameBuffer.class);
     private final GeometryRenderPass geometryRenderPass;
 
     private FrameBuffer frameBuffer;
     private GeometryAttachments geometryAttachments;
 
-    public GeometryFrameBuffer(SwapChain swapChain) {
-        Logger.debug("Creating GeometryFrameBuffer");
+    public GeometryFrameBuffer(Swapchain swapChain) {
+        LOGGER.info("Creating GeometryFrameBuffer");
         createAttachments(swapChain);
         this.geometryRenderPass = new GeometryRenderPass(swapChain.getDevice(), this.geometryAttachments.getAttachments());
         createFrameBuffer(swapChain);
     }
 
     public void close() {
-        Logger.debug("Destroying Geometry FrameBuffer");
+        LOGGER.info("Closing Geometry FrameBuffer");
         this.geometryRenderPass.close();
         this.geometryAttachments.close();
         this.frameBuffer.close();
     }
 
-    private void createAttachments(SwapChain swapChain) {
+    private void createAttachments(Swapchain swapChain) {
         var extent2D = swapChain.getSwapChainExtent();
         var width = extent2D.width();
         var height = extent2D.height();
         this.geometryAttachments = new GeometryAttachments(swapChain.getDevice(), width, height);
     }
 
-    private void createFrameBuffer(SwapChain swapChain) {
+    private void createFrameBuffer(Swapchain swapChain) {
         try (var stack = MemoryStack.stackPush()) {
             var attachments = this.geometryAttachments.getAttachments();
             var attachmentsBuff = stack.mallocLong(attachments.size());
@@ -57,7 +58,7 @@ public class GeometryFrameBuffer {
         return this.geometryRenderPass;
     }
 
-    public void resize(SwapChain swapChain) {
+    public void resize(Swapchain swapChain) {
         this.frameBuffer.close();
         this.geometryAttachments.close();
         createAttachments(swapChain);

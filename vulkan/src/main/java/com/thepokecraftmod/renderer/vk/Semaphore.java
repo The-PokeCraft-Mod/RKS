@@ -18,14 +18,14 @@ public class Semaphore {
                     .sType$Default();
 
             var lp = stack.mallocLong(1);
-            VkUtils.ok(vkCreateSemaphore(device.getVkDevice(), semaphoreCreateInfo, null, lp),
+            VkUtils.ok(vkCreateSemaphore(device.vk(), semaphoreCreateInfo, null, lp),
                     "Failed to create semaphore");
             this.vkSemaphore = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroySemaphore(this.device.getVkDevice(), this.vkSemaphore, null);
+        vkDestroySemaphore(this.device.vk(), this.vkSemaphore, null);
     }
 
     public long getVkSemaphore() {

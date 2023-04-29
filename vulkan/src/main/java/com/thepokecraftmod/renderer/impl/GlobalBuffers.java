@@ -4,11 +4,12 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkBufferCopy;
 import org.lwjgl.vulkan.VkDrawIndexedIndirectCommand;
-import org.tinylog.Logger;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.vk.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -19,8 +20,9 @@ import java.util.function.Predicate;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-//TODO: stage only part uploaded
+//TODO: stage only part which contains new model uploaded. add ability to mark space for removal. GlobalBufferArena?
 public class GlobalBuffers {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalBuffers.class);
     public static final int IND_COMMAND_STRIDE = VkDrawIndexedIndirectCommand.SIZEOF;
     // Handle std430 alignment
     private static final int MATERIAL_PADDING = VkConstants.FLOAT_LENGTH * 3;
@@ -40,7 +42,7 @@ public class GlobalBuffers {
     private List<VulkanAnimEntity> vulkanAnimEntityList;
 
     public GlobalBuffers(Device device) {
-        Logger.debug("Creating global buffers");
+        LOGGER.info("Creating global buffers");
         var settings = Settings.getInstance();
         this.verticesBuffer = new VulkanBuffer(device, settings.getMaxVerticesBuffer(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
         this.indicesBuffer = new VulkanBuffer(device, settings.getMaxIndicesBuffer(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
@@ -51,7 +53,7 @@ public class GlobalBuffers {
     }
 
     public void close() {
-        Logger.debug("Destroying global buffers");
+        LOGGER.info("Closing global buffers");
         this.verticesBuffer.close();
         this.indicesBuffer.close();
         if (this.indirectBuffer != null) this.indirectBuffer.close();
@@ -117,12 +119,12 @@ public class GlobalBuffers {
         return this.vulkanAnimEntityList;
     }
 
-    private void loadAnimEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool, Queue queue, int numSwapChainImages) {
+    private void loadAnimEntities(List<VulkanModel> vulkanModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
         this.vulkanAnimEntityList = new ArrayList<>();
         this.numAnimIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
-            var device = commandPool.getDevice();
-            var cmdBuffer = new CommandBuffer(commandPool, true, true);
+            var device = cmdPool.getDevice();
+            var cmdBuffer = new CmdBuffer(cmdPool, true, true);
 
             var bufferOffset = 0;
             var firstInstance = 0;
@@ -205,9 +207,9 @@ public class GlobalBuffers {
         }
     }
 
-    public void loadEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool, Queue queue, int numSwapChainImages) {
-        loadStaticEntities(vulkanModelList, scene, commandPool, queue, numSwapChainImages);
-        loadAnimEntities(vulkanModelList, scene, commandPool, queue, numSwapChainImages);
+    public void loadEntities(List<VulkanModel> vulkanModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
+        loadStaticEntities(vulkanModelList, scene, cmdPool, queue, numSwapChainImages);
+        loadAnimEntities(vulkanModelList, scene, cmdPool, queue, numSwapChainImages);
     }
 
     public void loadInstanceData(Scene scene, List<VulkanModel> vulkanModels, int currentSwapChainIdx) {
@@ -328,12 +330,12 @@ public class GlobalBuffers {
         }
     }
 
-    public List<VulkanModel> loadModels(List<ModelData> models, TextureCache textureCache, CommandPool cmdPool, Queue queue) {
+    public List<VulkanModel> loadModels(List<ModelData> models, TextureCache textureCache, CmdPool cmdPool, Queue queue) {
         List<VulkanModel> vulkanModelList = new ArrayList<>();
         List<Texture> textureList = new ArrayList<>();
 
         var device = cmdPool.getDevice();
-        var cmd = new CommandBuffer(cmdPool, true, true);
+        var cmd = new CmdBuffer(cmdPool, true, true);
 
         var verticesStgBuffer = new StagingBuffer(device, this.verticesBuffer.getRequestedSize());
         var indicesStgBuffer = new StagingBuffer(device, this.indicesBuffer.getRequestedSize());
@@ -384,11 +386,11 @@ public class GlobalBuffers {
         return vulkanModelList;
     }
 
-    private void loadStaticEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool, Queue queue, int numSwapChainImages) {
+    private void loadStaticEntities(List<VulkanModel> vulkanModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
         this.numIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
-            var device = commandPool.getDevice();
-            var cmd = new CommandBuffer(commandPool, true, true);
+            var device = cmdPool.getDevice();
+            var cmd = new CmdBuffer(cmdPool, true, true);
 
             List<VkDrawIndexedIndirectCommand> indexedIndirectCommandList = new ArrayList<>();
             var numInstances = 0;
@@ -482,13 +484,13 @@ public class GlobalBuffers {
             return this.dataBuffer;
         }
 
-        private void recordTransferCommand(CommandBuffer cmd, VulkanBuffer dstBuffer) {
+        private void recordTransferCommand(CmdBuffer cmd, VulkanBuffer dstBuffer) {
             try (var stack = MemoryStack.stackPush()) {
                 var copyRegion = VkBufferCopy.calloc(1, stack)
                         .srcOffset(0)
                         .dstOffset(0)
                         .size(this.stgVulkanBuffer.getRequestedSize());
-                vkCmdCopyBuffer(cmd.getVkCommandBuffer(), this.stgVulkanBuffer.getBuffer(), dstBuffer.getBuffer(), copyRegion);
+                vkCmdCopyBuffer(cmd.vk(), this.stgVulkanBuffer.getBuffer(), dstBuffer.getBuffer(), copyRegion);
             }
         }
     }

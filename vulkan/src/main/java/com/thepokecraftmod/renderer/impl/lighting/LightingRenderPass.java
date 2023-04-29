@@ -3,7 +3,7 @@ package com.thepokecraftmod.renderer.impl.lighting;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 import com.thepokecraftmod.renderer.vk.Device;
-import com.thepokecraftmod.renderer.vk.SwapChain;
+import com.thepokecraftmod.renderer.vk.Swapchain;
 
 import static org.lwjgl.vulkan.VK11.*;
 import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
@@ -13,7 +13,7 @@ public class LightingRenderPass {
     private final Device device;
     private final long vkRenderPass;
 
-    public LightingRenderPass(SwapChain swapChain) {
+    public LightingRenderPass(Swapchain swapChain) {
         this.device = swapChain.getDevice();
         try (var stack = MemoryStack.stackPush()) {
             var attachments = VkAttachmentDescription.calloc(1, stack);
@@ -54,14 +54,14 @@ public class LightingRenderPass {
                     .pDependencies(subpassDependencies);
 
             var lp = stack.mallocLong(1);
-            ok(vkCreateRenderPass(this.device.getVkDevice(), renderPassInfo, null, lp),
+            ok(vkCreateRenderPass(this.device.vk(), renderPassInfo, null, lp),
                     "Failed to create render pass");
             this.vkRenderPass = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyRenderPass(this.device.getVkDevice(), this.vkRenderPass, null);
+        vkDestroyRenderPass(this.device.vk(), this.vkRenderPass, null);
     }
 
     public long getVkRenderPass() {

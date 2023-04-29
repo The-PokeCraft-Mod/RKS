@@ -2,24 +2,25 @@ package com.thepokecraftmod.renderer.vk.descriptor;
 
 import com.thepokecraftmod.renderer.vk.Device;
 import com.thepokecraftmod.renderer.vk.VkUtils;
-import org.jetbrains.annotations.ApiStatus;
+import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorPoolCreateInfo;
 import org.lwjgl.vulkan.VkDescriptorPoolSize;
-import org.tinylog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class DescriptorPool {
-
+public class DescriptorPool implements VkWrapper<Long> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DescriptorPool.class);
     private final Device device;
     private final long descriptorPool;
 
     public DescriptorPool(Device device, List<DescriptorTypeCount> descriptorTypeCounts, int objects) {
         try (var stack = MemoryStack.stackPush()) {
-            Logger.debug("Creating descriptor pool");
+            LOGGER.info("Creating descriptor pool");
             this.device = device;
             var maxSets = 0;
             var typeCount = descriptorTypeCounts.size();
@@ -38,14 +39,15 @@ public class DescriptorPool {
                     .maxSets(maxSets * objects);
 
             var pDescriptorPool = stack.mallocLong(1);
-            VkUtils.ok(vkCreateDescriptorPool(device.getVkDevice(), descriptorPoolInfo, null, pDescriptorPool), "Failed to create descriptor pool");
+            VkUtils.ok(vkCreateDescriptorPool(device.vk(), descriptorPoolInfo, null, pDescriptorPool), "Failed to create descriptor pool");
             this.descriptorPool = pDescriptorPool.get(0);
         }
     }
 
+    @Override
     public void close() {
-        Logger.debug("Destroying descriptor pool");
-        vkDestroyDescriptorPool(this.device.getVkDevice(), this.descriptorPool, null);
+        LOGGER.info("Closing descriptor pool");
+        vkDestroyDescriptorPool(this.device.vk(), this.descriptorPool, null);
     }
 
     public void freeDescriptorSet(long vkDescriptorSet) {
@@ -53,7 +55,7 @@ public class DescriptorPool {
             var longBuffer = stack.mallocLong(1);
             longBuffer.put(0, vkDescriptorSet);
 
-            VkUtils.ok(vkFreeDescriptorSets(this.device.getVkDevice(), this.descriptorPool, longBuffer), "Failed to free descriptor set");
+            VkUtils.ok(vkFreeDescriptorSets(this.device.vk(), this.descriptorPool, longBuffer), "Failed to free descriptor set");
         }
     }
 
@@ -61,7 +63,8 @@ public class DescriptorPool {
         return this.device;
     }
 
-    public long vk() {
+    @Override
+    public Long vk() {
         return this.descriptorPool;
     }
 

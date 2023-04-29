@@ -39,7 +39,7 @@ public class LightPass {
 
     private AttachmentsDescriptorSet attachmentsDescriptorSet;
     private AttachmentsLayout attachmentsLayout;
-    private CommandBuffer[] commandBuffers;
+    private CmdBuffer[] cmdBuffers;
     private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
     private Fence[] fences;
@@ -51,10 +51,10 @@ public class LightPass {
     private ShaderProgram shaderProgram;
     private VulkanBuffer[] shadowsMatricesBuffers;
     private DescriptorSet.UniformDescriptorSet[] shadowsMatricesDescriptorSets;
-    private SwapChain swapChain;
+    private Swapchain swapChain;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
 
-    public LightPass(SwapChain swapChain, CommandPool commandPool, PipelineCache pipelineCache,
+    public LightPass(Swapchain swapChain, CmdPool cmdPool, PipelineCache pipelineCache,
                      List<Attachment> attachments, Scene scene) {
         this.swapChain = swapChain;
         this.scene = scene;
@@ -69,14 +69,14 @@ public class LightPass {
         createUniforms(numImages);
         createDescriptorSets(attachments, numImages);
         createPipeline(pipelineCache);
-        createCommandBuffers(commandPool, numImages);
+        createCommandBuffers(cmdPool, numImages);
     }
 
-    public CommandBuffer beginRecording(List<CascadeShadow> cascadeShadows) {
+    public CmdBuffer beginRecording(List<CascadeShadow> cascadeShadows) {
         var idx = this.swapChain.getCurrentFrame();
 
         var fence = this.fences[idx];
-        var commandBuffer = this.commandBuffers[idx];
+        var commandBuffer = this.cmdBuffers[idx];
 
         fence.waitForFence();
         fence.reset();
@@ -103,16 +103,16 @@ public class LightPass {
         this.lightingFrameBuffer.close();
         Arrays.stream(this.shadowsMatricesBuffers).forEach(VulkanBuffer::close);
         this.shaderProgram.close();
-        Arrays.stream(this.commandBuffers).forEach(CommandBuffer::close);
+        Arrays.stream(this.cmdBuffers).forEach(CmdBuffer::close);
         Arrays.stream(this.fences).forEach(Fence::close);
     }
 
-    private void createCommandBuffers(CommandPool commandPool, int numImages) {
-        this.commandBuffers = new CommandBuffer[numImages];
+    private void createCommandBuffers(CmdPool cmdPool, int numImages) {
+        this.cmdBuffers = new CmdBuffer[numImages];
         this.fences = new Fence[numImages];
 
         for (var i = 0; i < numImages; i++) {
-            this.commandBuffers[i] = new CommandBuffer(commandPool, true, false);
+            this.cmdBuffers[i] = new CmdBuffer(cmdPool, true, false);
             this.fences[i] = new Fence(this.device, true);
         }
     }
@@ -190,16 +190,16 @@ public class LightPass {
         }
     }
 
-    public void endRecording(CommandBuffer commandBuffer) {
-        vkCmdEndRenderPass(commandBuffer.getVkCommandBuffer());
-        commandBuffer.endRecording();
+    public void endRecording(CmdBuffer cmdBuffer) {
+        vkCmdEndRenderPass(cmdBuffer.vk());
+        cmdBuffer.endRecording();
     }
 
     public LightingFrameBuffer getLightingFrameBuffer() {
         return this.lightingFrameBuffer;
     }
 
-    public void recordCommandBuffer(CommandBuffer commandBuffer) {
+    public void recordCommandBuffer(CmdBuffer cmdBuffer) {
         try (var stack = MemoryStack.stackPush()) {
             var idx = this.swapChain.getCurrentFrame();
             var swapChainExtent = this.swapChain.getSwapChainExtent();
@@ -208,7 +208,7 @@ public class LightPass {
 
             var frameBuffer = this.lightingFrameBuffer.getFrameBuffers()[idx];
 
-            commandBuffer.reset();
+            cmdBuffer.reset();
             var clearValues = VkClearValue.calloc(1, stack);
             clearValues.apply(0, v -> v.color().float32(0, 0.0f).float32(1, 0.0f).float32(2, 0.0f).float32(3, 1));
 
@@ -223,8 +223,8 @@ public class LightPass {
                     .framebuffer(frameBuffer.getVkFrameBuffer())
                     .renderArea(renderArea);
 
-            commandBuffer.beginRecording();
-            var cmdHandle = commandBuffer.getVkCommandBuffer();
+            cmdBuffer.beginRecording();
+            var cmdHandle = cmdBuffer.vk();
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.getVkPipeline());
@@ -259,7 +259,7 @@ public class LightPass {
         }
     }
 
-    public void resize(SwapChain swapChain, List<Attachment> attachments) {
+    public void resize(Swapchain swapChain, List<Attachment> attachments) {
         this.swapChain = swapChain;
         this.attachmentsDescriptorSet.update(attachments);
         this.lightingFrameBuffer.resize(swapChain);
@@ -268,10 +268,10 @@ public class LightPass {
     public void submit(Queue queue) {
         try (var stack = MemoryStack.stackPush()) {
             var idx = this.swapChain.getCurrentFrame();
-            var commandBuffer = this.commandBuffers[idx];
+            var commandBuffer = this.cmdBuffers[idx];
             var currentFence = this.fences[idx];
             var syncSemaphores = this.swapChain.getSyncSemaphoresList()[idx];
-            queue.submit(stack.pointers(commandBuffer.getVkCommandBuffer()),
+            queue.submit(stack.pointers(commandBuffer.vk()),
                     stack.longs(syncSemaphores.geometryCompleteSemaphore().getVkSemaphore()),
                     stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT),
                     stack.longs(syncSemaphores.renderCompleteSemaphore().getVkSemaphore()),

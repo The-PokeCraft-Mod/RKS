@@ -32,7 +32,7 @@ public class TextureDescriptorSet extends DescriptorSet {
                     .pSetLayouts(pDescriptorSetLayout);
 
             var pDescriptorSet = stack.mallocLong(1);
-            VkUtils.ok(vkAllocateDescriptorSets(device.getVkDevice(), allocInfo, pDescriptorSet),
+            VkUtils.ok(vkAllocateDescriptorSets(device.vk(), allocInfo, pDescriptorSet),
                     "Failed to create descriptor set");
             this.vkDescriptorSet = pDescriptorSet.get(0);
 
@@ -56,7 +56,7 @@ public class TextureDescriptorSet extends DescriptorSet {
                     .descriptorCount(numImages)
                     .pImageInfo(imageInfo);
 
-            vkUpdateDescriptorSets(device.getVkDevice(), descrBuffer, null);
+            vkUpdateDescriptorSets(device.vk(), descrBuffer, null);
         }
     }
 }
