@@ -1,14 +1,13 @@
 package com.thepokecraftmod.vulkan.tests;
 
-import com.thepokecraftmod.rks.model.animation.TransformStorage;
+import com.thepokecraftmod.renderer.RKS;
+import com.thepokecraftmod.renderer.RenderingImpl;
+import com.thepokecraftmod.renderer.Window;
+import com.thepokecraftmod.renderer.impl.Render;
+import com.thepokecraftmod.renderer.impl.gui.GuiPassRenderer;
+import com.thepokecraftmod.renderer.scene.*;
 import com.thepokecraftmod.vulkan.util.DebugWindow;
 import org.joml.Vector3f;
-import org.vulkanb.eng.RKS;
-import org.vulkanb.eng.RenderingImpl;
-import org.vulkanb.eng.Window;
-import org.vulkanb.eng.impl.Render;
-import org.vulkanb.eng.impl.gui.GuiPassRenderer;
-import org.vulkanb.eng.scene.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -107,7 +106,7 @@ public class Standalone implements RenderingImpl {
 
         renderer.entitiesLoadedTimeStamp = 0;
         this.loadedJitModel = true;
-        renderer.loadModels(List.of(data));
+        renderer.loadModels(models);
     }
 
     @Override

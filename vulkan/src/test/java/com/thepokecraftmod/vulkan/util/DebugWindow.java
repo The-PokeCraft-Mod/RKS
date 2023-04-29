@@ -3,8 +3,8 @@ package com.thepokecraftmod.vulkan.util;
 import org.lwjgl.glfw.GLFWCharCallbackI;
 import org.lwjgl.glfw.GLFWKeyCallbackI;
 import org.lwjgl.system.MemoryUtil;
-import org.vulkanb.eng.MouseInput;
-import org.vulkanb.eng.Window;
+import com.thepokecraftmod.renderer.MouseInput;
+import com.thepokecraftmod.renderer.Window;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
