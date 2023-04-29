@@ -4,10 +4,10 @@ import org.lwjgl.system.MemoryStack;
 import org.tinylog.Logger;
 import org.vulkanb.eng.Settings;
 import org.vulkanb.eng.Window;
-import org.vulkanb.eng.impl.animation.AnimationComputeActivity;
-import org.vulkanb.eng.impl.geometry.GeometryRenderActivity;
-import org.vulkanb.eng.impl.gui.GuiRenderActivity;
-import org.vulkanb.eng.impl.lighting.LightingRenderActivity;
+import org.vulkanb.eng.impl.animation.GpuAnimator;
+import org.vulkanb.eng.impl.geometry.GeometryPassRenderer;
+import org.vulkanb.eng.impl.gui.GuiPassRenderer;
+import org.vulkanb.eng.impl.lighting.LightPassRenderer;
 import org.vulkanb.eng.impl.shadows.ShadowRenderActivity;
 import org.vulkanb.eng.scene.ModelData;
 import org.vulkanb.eng.scene.Scene;
@@ -21,15 +21,15 @@ import static org.lwjgl.vulkan.VK11.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BI
 
 public class Render {
 
-    private final AnimationComputeActivity animationComputeActivity;
+    private final GpuAnimator gpuAnimator;
     private final CommandPool commandPool;
     private final Device device;
-    private final GeometryRenderActivity geometryRenderActivity;
+    private final GeometryPassRenderer geometryPassRenderer;
     private final GlobalBuffers globalBuffers;
     private final Queue.GraphicsQueue graphQueue;
-    private final GuiRenderActivity guiRenderActivity;
+    private final GuiPassRenderer guiPassRenderer;
     private final Instance instance;
-    private final LightingRenderActivity lightingRenderActivity;
+    private final LightPassRenderer lightPassRenderer;
     private final PhysicalDevice physicalDevice;
     private final PipelineCache pipelineCache;
     private final Queue.PresentQueue presentQueue;
@@ -38,7 +38,7 @@ public class Render {
     private final TextureCache textureCache;
     private final List<VulkanModel> vulkanModels;
     private CommandBuffer[] commandBuffers;
-    private long entitiesLoadedTimeStamp;
+    public long entitiesLoadedTimeStamp;
     private Fence[] fences;
     private SwapChain swapChain;
 
@@ -56,13 +56,13 @@ public class Render {
         this.vulkanModels = new ArrayList<>();
         this.textureCache = new TextureCache();
         this.globalBuffers = new GlobalBuffers(this.device);
-        this.geometryRenderActivity = new GeometryRenderActivity(this.swapChain, this.pipelineCache, scene, this.globalBuffers);
+        this.geometryPassRenderer = new GeometryPassRenderer(this.swapChain, this.pipelineCache, scene, this.globalBuffers);
         this.shadowRenderActivity = new ShadowRenderActivity(this.swapChain, this.pipelineCache, scene);
-        var attachments = new ArrayList<>(this.geometryRenderActivity.getAttachments());
+        var attachments = new ArrayList<>(this.geometryPassRenderer.getAttachments());
         attachments.add(this.shadowRenderActivity.getDepthAttachment());
-        this.lightingRenderActivity = new LightingRenderActivity(this.swapChain, this.commandPool, this.pipelineCache, attachments, scene);
-        this.animationComputeActivity = new AnimationComputeActivity(this.commandPool, this.pipelineCache);
-        this.guiRenderActivity = new GuiRenderActivity(this.swapChain, this.commandPool, this.graphQueue, this.pipelineCache, this.lightingRenderActivity.getLightingFrameBuffer().getLightingRenderPass().getVkRenderPass());
+        this.lightPassRenderer = new LightPassRenderer(this.swapChain, this.commandPool, this.pipelineCache, attachments, scene);
+        this.gpuAnimator = new GpuAnimator(this.commandPool, this.pipelineCache);
+        this.guiPassRenderer = new GuiPassRenderer(this.swapChain, this.commandPool, this.graphQueue, this.pipelineCache, this.lightPassRenderer.getLightingFrameBuffer().getLightingRenderPass().getVkRenderPass());
         this.entitiesLoadedTimeStamp = 0;
         createCommandBuffers();
     }
@@ -73,7 +73,7 @@ public class Render {
         var fence = this.fences[idx];
         var commandBuffer = this.commandBuffers[idx];
 
-        fence.fenceWait();
+        fence.waitForFence();
         fence.reset();
 
         return commandBuffer;
@@ -85,11 +85,11 @@ public class Render {
         this.device.waitIdle();
         this.textureCache.close();
         this.pipelineCache.close();
-        this.guiRenderActivity.close();
-        this.lightingRenderActivity.close();
-        this.animationComputeActivity.close();
+        this.guiPassRenderer.close();
+        this.lightPassRenderer.close();
+        this.gpuAnimator.close();
         this.shadowRenderActivity.close();
-        this.geometryRenderActivity.close();
+        this.geometryPassRenderer.close();
         Arrays.stream(this.commandBuffers).forEach(CommandBuffer::close);
         Arrays.stream(this.fences).forEach(Fence::close);
         this.commandPool.close();
@@ -112,12 +112,12 @@ public class Render {
         }
     }
 
-    public void loadModels(List<ModelData> modelDataList) {
-        Logger.debug("Loading {} model(s)", modelDataList.size());
-        this.vulkanModels.addAll(this.globalBuffers.loadModels(modelDataList, this.textureCache, this.commandPool, this.graphQueue));
-        Logger.debug("Loaded {} model(s)", modelDataList.size());
+    public void loadModels(List<ModelData> models) {
+        Logger.debug("Loading {} model(s)", models.size());
+        this.vulkanModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.commandPool, this.graphQueue));
+        Logger.debug("Loaded {} model(s)", models.size());
 
-        this.geometryRenderActivity.loadModels(this.textureCache);
+        this.geometryPassRenderer.loadModels(this.textureCache);
     }
 
     private void recordCommands() {
@@ -125,7 +125,7 @@ public class Render {
         for (var commandBuffer : this.commandBuffers) {
             commandBuffer.reset();
             commandBuffer.beginRecording();
-            this.geometryRenderActivity.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
+            this.geometryPassRenderer.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
             this.shadowRenderActivity.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
             commandBuffer.endRecording();
             idx++;
@@ -137,7 +137,7 @@ public class Render {
             this.entitiesLoadedTimeStamp = scene.getEntitiesLoadedTimeStamp();
             this.device.waitIdle();
             this.globalBuffers.loadEntities(this.vulkanModels, scene, this.commandPool, this.graphQueue, this.swapChain.getNumImages());
-            this.animationComputeActivity.onAnimatedEntitiesLoaded(this.globalBuffers);
+            this.gpuAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
             recordCommands();
         }
         if (window.getWidth() <= 0 && window.getHeight() <= 0) return;
@@ -150,19 +150,19 @@ public class Render {
 
         this.globalBuffers.loadInstanceData(scene, this.vulkanModels, this.swapChain.getCurrentFrame());
 
-        this.animationComputeActivity.recordCommandBuffer(this.globalBuffers);
-        this.animationComputeActivity.submit();
+        this.gpuAnimator.recordCommandBuffer(this.globalBuffers);
+        this.gpuAnimator.submit();
 
         var commandBuffer = acquireCurrentCommandBuffer();
-        this.geometryRenderActivity.render();
+        this.geometryPassRenderer.render();
         this.shadowRenderActivity.render();
         submitSceneCommand(this.graphQueue, commandBuffer);
 
-        commandBuffer = this.lightingRenderActivity.beginRecording(this.shadowRenderActivity.getShadowCascades());
-        this.lightingRenderActivity.recordCommandBuffer(commandBuffer);
-        this.guiRenderActivity.recordCommandBuffer(scene, commandBuffer);
-        this.lightingRenderActivity.endRecording(commandBuffer);
-        this.lightingRenderActivity.submit(this.graphQueue);
+        commandBuffer = this.lightPassRenderer.beginRecording(this.shadowRenderActivity.getShadowCascades());
+        this.lightPassRenderer.recordCommandBuffer(commandBuffer);
+        this.guiPassRenderer.recordCommandBuffer(scene, commandBuffer);
+        this.lightPassRenderer.endRecording(commandBuffer);
+        this.lightPassRenderer.submit(this.graphQueue);
 
         if (this.swapChain.presentImage(this.graphQueue)) window.setResized(true);
     }
@@ -175,15 +175,14 @@ public class Render {
 
         this.swapChain.close();
 
-        this.swapChain = new SwapChain(this.device, this.surface, window, engProps.getRequestedImages(),
-                engProps.isvSync());
-        this.geometryRenderActivity.resize(this.swapChain);
+        this.swapChain = new SwapChain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
+        this.geometryPassRenderer.resize(this.swapChain);
         this.shadowRenderActivity.resize(this.swapChain);
         recordCommands();
-        List<Attachment> attachments = new ArrayList<>(this.geometryRenderActivity.getAttachments());
+        List<Attachment> attachments = new ArrayList<>(this.geometryPassRenderer.getAttachments());
         attachments.add(this.shadowRenderActivity.getDepthAttachment());
-        this.lightingRenderActivity.resize(this.swapChain, attachments);
-        this.guiRenderActivity.resize(this.swapChain);
+        this.lightPassRenderer.resize(this.swapChain, attachments);
+        this.guiPassRenderer.resize(this.swapChain);
     }
 
     public void submitSceneCommand(Queue queue, CommandBuffer commandBuffer) {

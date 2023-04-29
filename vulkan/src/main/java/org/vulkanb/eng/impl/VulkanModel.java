@@ -27,7 +27,7 @@ public class VulkanModel {
         return this.modelId;
     }
 
-    public List<VulkanAnimationData> getVulkanAnimationDataList() {
+    public List<VulkanAnimationData> getAnimationData() {
         return this.vulkanAnimationDataList;
     }
 
@@ -40,29 +40,32 @@ public class VulkanModel {
     }
 
     public static class VulkanAnimationData {
-        private final List<VulkanAnimationFrame> vulkanAnimationFrameList;
+
+        private final List<VulkanAnimationFrame> frameList;
 
         public VulkanAnimationData() {
-            this.vulkanAnimationFrameList = new ArrayList<>();
+            this.frameList = new ArrayList<>();
         }
 
         public void addVulkanAnimationFrame(VulkanAnimationFrame vulkanAnimationFrame) {
-            this.vulkanAnimationFrameList.add(vulkanAnimationFrame);
+            this.frameList.add(vulkanAnimationFrame);
         }
 
-        public List<VulkanAnimationFrame> getVulkanAnimationFrameList() {
-            return this.vulkanAnimationFrameList;
+        public List<VulkanAnimationFrame> getFrameList() {
+            return this.frameList;
         }
     }
 
-    public record VulkanAnimationFrame(int jointMatricesOffset) {
+    public record VulkanAnimationFrame(int jointOffset) {}
 
-    }
+    public record VulkanMaterial(int globalMaterialIdx) {}
 
-    public record VulkanMaterial(int globalMaterialIdx) {
-    }
-
-    public record VulkanMesh(int verticesSize, int numIndices, int verticesOffset, int indicesOffset,
-                             int globalMaterialIdx, int weightsOffset) {
-    }
+    public record VulkanMesh(
+            int verticesSize,
+            int numIndices,
+            int verticesOffset,
+            int indicesOffset,
+            int globalMaterialIdx,
+            int weightsOffset
+    ) {}
 }

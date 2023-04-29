@@ -119,7 +119,7 @@ public class GlobalBuffers {
         return this.verticesBuffer;
     }
 
-    public List<VulkanAnimEntity> getVulkanAnimEntityList() {
+    public List<VulkanAnimEntity> getAnimatedEntities() {
         return this.vulkanAnimEntityList;
     }
 
@@ -141,7 +141,7 @@ public class GlobalBuffers {
                     if (!entity.hasAnimation()) continue;
                     var vulkanAnimEntity = new VulkanAnimEntity(entity, vulkanModel);
                     this.vulkanAnimEntityList.add(vulkanAnimEntity);
-                    var vulkanAnimMeshList = vulkanAnimEntity.getVulkanAnimMeshList();
+                    var vulkanAnimMeshList = vulkanAnimEntity.getAnimatedMeshes();
                     for (var vulkanMesh : vulkanModel.getVulkanMeshList()) {
                         var indexedIndirectCommand = VkDrawIndexedIndirectCommand.calloc(stack);
                         indexedIndirectCommand.indexCount(vulkanMesh.numIndices());

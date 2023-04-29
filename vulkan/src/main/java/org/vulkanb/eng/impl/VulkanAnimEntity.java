@@ -20,7 +20,7 @@ public class VulkanAnimEntity {
         return this.entity;
     }
 
-    public List<VulkanAnimMesh> getVulkanAnimMeshList() {
+    public List<VulkanAnimMesh> getAnimatedMeshes() {
         return this.vulkanAnimMeshList;
     }
 

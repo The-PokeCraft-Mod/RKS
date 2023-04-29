@@ -23,8 +23,7 @@ import java.util.Objects;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.vulkan.VK11.*;
 
-public class GuiRenderActivity {
-
+public class GuiPassRenderer {
     private static final String GUI_FRAGMENT_SHADER_FILE_GLSL = "gui_fragment.glsl";
     private static final String GUI_FRAGMENT_SHADER_FILE_SPV = GUI_FRAGMENT_SHADER_FILE_GLSL + ".spv";
     private static final String GUI_VERTEX_SHADER_FILE_GLSL = "gui_vertex.glsl";
@@ -42,8 +41,8 @@ public class GuiRenderActivity {
     private DescriptorSetLayout.SamplerDescriptorSetLayout textureDescriptorSetLayout;
     private VulkanBuffer[] vertexBuffers;
 
-    public GuiRenderActivity(SwapChain swapChain, CommandPool commandPool, Queue queue, PipelineCache pipelineCache,
-                             long vkRenderPass) {
+    public GuiPassRenderer(SwapChain swapChain, CommandPool commandPool, Queue queue, PipelineCache pipelineCache,
+                           long vkRenderPass) {
         this.swapChain = swapChain;
         this.device = swapChain.getDevice();
 

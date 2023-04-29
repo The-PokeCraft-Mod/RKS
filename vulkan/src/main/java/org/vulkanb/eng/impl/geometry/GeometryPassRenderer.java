@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class GeometryRenderActivity implements Closeable {
+public class GeometryPassRenderer implements Closeable {
     private static final String GEOMETRY_FRAGMENT_SHADER_FILE_GLSL = "geometry_fragment.glsl";
     private static final String GEOMETRY_FRAGMENT_SHADER_FILE_SPV = GEOMETRY_FRAGMENT_SHADER_FILE_GLSL + ".spv";
     private static final String GEOMETRY_VERTEX_SHADER_FILE_GLSL = "geometry_vertex.glsl";
@@ -49,7 +49,7 @@ public class GeometryRenderActivity implements Closeable {
     private VulkanBuffer[] viewMatricesBuffer;
     private DescriptorSet.UniformDescriptorSet[] viewMatricesDescriptorSets;
 
-    public GeometryRenderActivity(SwapChain swapChain, PipelineCache pipelineCache, Scene scene, GlobalBuffers globalBuffers) {
+    public GeometryPassRenderer(SwapChain swapChain, PipelineCache pipelineCache, Scene scene, GlobalBuffers globalBuffers) {
         this.swapChain = swapChain;
         this.pipelineCache = pipelineCache;
         this.scene = scene;

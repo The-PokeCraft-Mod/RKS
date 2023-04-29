@@ -28,7 +28,7 @@ public class Fence {
         vkDestroyFence(this.device.getVkDevice(), this.vkFence, null);
     }
 
-    public void fenceWait() {
+    public void waitForFence() {
         vkWaitForFences(this.device.getVkDevice(), this.vkFence, true, Long.MAX_VALUE);
     }
 

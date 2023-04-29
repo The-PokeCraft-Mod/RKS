@@ -6,7 +6,7 @@ import org.vulkanb.eng.RKS;
 import org.vulkanb.eng.RenderingImpl;
 import org.vulkanb.eng.Window;
 import org.vulkanb.eng.impl.Render;
-import org.vulkanb.eng.impl.gui.GuiRenderActivity;
+import org.vulkanb.eng.impl.gui.GuiPassRenderer;
 import org.vulkanb.eng.scene.*;
 
 import java.util.ArrayList;
@@ -17,6 +17,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public class Standalone implements RenderingImpl {
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float MOVEMENT_SPEED = 10.0f / 1000000000f;
+    private static RKS RKS;
     private float angleInc;
     private Entity rayquaza;
     private Entity jit;
@@ -29,7 +30,8 @@ public class Standalone implements RenderingImpl {
 
     public static void main(String[] args) {
 //        System.loadLibrary("renderdoc");
-        new RKS(new Standalone(), new DebugWindow("RKS Standalone Test", new GuiRenderActivity.KeyCallback(), new GuiRenderActivity.CharCallBack())).start();
+        Standalone.RKS = new RKS(new Standalone(), new DebugWindow("RKS Standalone Test", new GuiPassRenderer.KeyCallback(), new GuiPassRenderer.CharCallBack()));
+        RKS.start();
     }
 
     @Override
@@ -92,6 +94,7 @@ public class Standalone implements RenderingImpl {
         jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
         scene.addEntity(jit);
 
+        renderer.entitiesLoadedTimeStamp = 0;
         renderer.loadModels(List.of(data));
         this.loadedJitModel = true;
     }

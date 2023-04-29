@@ -21,8 +21,7 @@ import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class LightingRenderActivity {
-
+public class LightPassRenderer {
     private static final String LIGHTING_FRAGMENT_SHADER_FILE_GLSL = "lighting_fragment.glsl";
     private static final String LIGHTING_FRAGMENT_SHADER_FILE_SPV = LIGHTING_FRAGMENT_SHADER_FILE_GLSL + ".spv";
     private static final String LIGHTING_VERTEX_SHADER_FILE_GLSL = "lighting_vertex.glsl";
@@ -51,8 +50,8 @@ public class LightingRenderActivity {
     private SwapChain swapChain;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
 
-    public LightingRenderActivity(SwapChain swapChain, CommandPool commandPool, PipelineCache pipelineCache,
-                                  List<Attachment> attachments, Scene scene) {
+    public LightPassRenderer(SwapChain swapChain, CommandPool commandPool, PipelineCache pipelineCache,
+                             List<Attachment> attachments, Scene scene) {
         this.swapChain = swapChain;
         this.scene = scene;
         this.device = swapChain.getDevice();
@@ -75,7 +74,7 @@ public class LightingRenderActivity {
         var fence = this.fences[idx];
         var commandBuffer = this.commandBuffers[idx];
 
-        fence.fenceWait();
+        fence.waitForFence();
         fence.reset();
 
         updateLights(this.scene.getAmbientLight(), this.scene.getLights(), this.scene.getCamera().getViewMatrix(), this.lightsBuffers[idx]);

@@ -67,7 +67,7 @@ public class CommandBuffer {
         try (var stack = MemoryStack.stackPush()) {
             queue.submit(stack.pointers(this.vkCommandBuffer), null, null, null, fence);
         }
-        fence.fenceWait();
+        fence.waitForFence();
         fence.close();
     }
 }

@@ -2,7 +2,6 @@ package org.vulkanb.eng;
 
 import imgui.ImGui;
 import org.vulkanb.eng.impl.Render;
-import org.vulkanb.eng.impl.gui.GuiRenderActivity;
 import org.vulkanb.eng.scene.Scene;
 
 public class RKS {
