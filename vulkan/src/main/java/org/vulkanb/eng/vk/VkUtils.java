@@ -63,7 +63,7 @@ public class VkUtils {
                 case KHRSwapchain.VK_SUBOPTIMAL_KHR -> "A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully.";
 
                 // Error codes
-                case VK11.VK_ERROR_OUT_OF_POOL_MEMORY -> "Allocation failed due to no more space in the descriptor pool, and not because of system or device memory exhaustion.";
+                case VK11.VK_ERROR_OUT_OF_POOL_MEMORY -> "Allocation failed due to no more space in the descriptor pool. (not because of system or device memory exhaustion)";
                 case VK_ERROR_OUT_OF_HOST_MEMORY -> "A host memory allocation has failed.";
                 case VK_ERROR_OUT_OF_DEVICE_MEMORY -> "A device memory allocation has failed.";
                 case VK_ERROR_INITIALIZATION_FAILED -> "Initialization of an object could not be completed for implementation-specific reasons.";

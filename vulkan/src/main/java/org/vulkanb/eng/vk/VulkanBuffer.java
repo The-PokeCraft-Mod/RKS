@@ -65,8 +65,7 @@ public class VulkanBuffer {
 
     public long map() {
         if (this.mappedMemory == NULL) {
-            VkUtils.ok(vmaMapMemory(this.device.getMemoryAllocator().getVmaAllocator(), this.allocation, this.pb),
-                    "Failed to map allocation");
+            VkUtils.ok(vmaMapMemory(this.device.getMemoryAllocator().getVmaAllocator(), this.allocation, this.pb), "Failed to map allocation");
             this.mappedMemory = this.pb.get(0);
         }
         return this.mappedMemory;

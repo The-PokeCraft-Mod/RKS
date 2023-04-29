@@ -100,7 +100,6 @@ public class Standalone implements RenderingImpl {
         var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui", true);
         this.jit = new Entity("typhlosion", id, new Vector3f(0.0f, 0.0f, 0.0f));
         jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
-        jit.setScale(1);
         jit.updateModelMatrix();
         jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
         scene.addEntity(jit);

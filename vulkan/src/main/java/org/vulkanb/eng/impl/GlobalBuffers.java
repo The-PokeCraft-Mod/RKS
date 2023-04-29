@@ -19,6 +19,7 @@ import java.util.function.Predicate;
 
 import static org.lwjgl.vulkan.VK11.*;
 
+//TODO: stage only part uploaded
 public class GlobalBuffers {
     public static final int IND_COMMAND_STRIDE = VkDrawIndexedIndirectCommand.SIZEOF;
     // Handle std430 alignment
@@ -156,12 +157,12 @@ public class GlobalBuffers {
             if (this.numAnimIndirectCommands > 0) {
                 cmd.beginRecording();
 
-                var indirectStgBuffer = new StgBuffer(device, (long) IND_COMMAND_STRIDE * this.numAnimIndirectCommands);
+                var indirectStgBuffer = new StagingBuffer(device, (long) IND_COMMAND_STRIDE * this.numAnimIndirectCommands);
                 if (this.animIndirectBuffer != null) this.animIndirectBuffer.close();
                 this.animIndirectBuffer = new VulkanBuffer(device, indirectStgBuffer.stgVulkanBuffer.getRequestedSize(),
                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-                var dataBuffer = indirectStgBuffer.getDataBuffer();
+                var dataBuffer = indirectStgBuffer.mappedMem();
                 var indCommandBuffer = new VkDrawIndexedIndirectCommand.Buffer(dataBuffer);
 
                 indexedIndirectCommandList.forEach(indCommandBuffer::put);
@@ -184,10 +185,10 @@ public class GlobalBuffers {
         }
     }
 
-    private void loadAnimationData(ModelData modelData, VulkanModel vulkanModel, StgBuffer animJointMatricesStgBuffer) {
+    private void loadAnimationData(ModelData modelData, VulkanModel vulkanModel, StagingBuffer animJointMatricesStagingBuffer) {
         var animationsList = modelData.getAnimationsList();
         if (!modelData.hasAnimations()) return;
-        var dataBuffer = animJointMatricesStgBuffer.getDataBuffer();
+        var dataBuffer = animJointMatricesStagingBuffer.mappedMem();
         for (var animation : animationsList) {
             var vulkanAnimationData = new VulkanModel.VulkanAnimationData();
             vulkanModel.addVulkanAnimationData(vulkanAnimationData);
@@ -240,10 +241,10 @@ public class GlobalBuffers {
         instanceBuffer.unMap();
     }
 
-    private List<VulkanModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StgBuffer materialsStgBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
+    private List<VulkanModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StagingBuffer materialsStagingBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
         var vulkanMaterialList = new ArrayList<VulkanModel.VulkanMaterial>();
         for (var material : materialList) {
-            var dataBuffer = materialsStgBuffer.getDataBuffer();
+            var dataBuffer = materialsStagingBuffer.mappedMem();
 
             var texture = textureCache.createTexture(device, material.texturePath(), VK_FORMAT_R8G8B8A8_SRGB);
             if (texture != null) textureList.add(texture);
@@ -274,12 +275,14 @@ public class GlobalBuffers {
         return vulkanMaterialList;
     }
 
-    private void loadMeshes(StgBuffer verticesStgBuffer, StgBuffer indicesStgBuffer, StgBuffer animWeightsStgBuffer, ModelData modelData, VulkanModel vulkanModel, List<VulkanModel.VulkanMaterial> vulkanMaterialList) {
-        var verticesData = verticesStgBuffer.getDataBuffer();
-        var indicesData = indicesStgBuffer.getDataBuffer();
-        var meshDataList = modelData.getMeshDataList();
+    private void loadMeshes(StagingBuffer verticesStagingBuffer, StagingBuffer indicesStagingBuffer, StagingBuffer animWeightsStagingBuffer, ModelData modelData, VulkanModel vulkanModel, List<VulkanModel.VulkanMaterial> vulkanMaterialList) {
+        var verticesBuffer = verticesStagingBuffer.mappedMem();
+        var indicesBuffer = indicesStagingBuffer.mappedMem();
+        var weightsBuffer = animWeightsStagingBuffer.mappedMem();
+        var meshes = modelData.getMeshDataList();
         var meshCount = 0;
-        for (var meshData : meshDataList) {
+
+        for (var meshData : meshes) {
             var positions = meshData.positions();
             var normals = meshData.normals();
             var tangents = meshData.tangents();
@@ -295,32 +298,31 @@ public class GlobalBuffers {
             var globalMaterialIdx = 0;
             if (localMaterialIdx >= 0 && localMaterialIdx < vulkanMaterialList.size())
                 globalMaterialIdx = vulkanMaterialList.get(localMaterialIdx).globalMaterialIdx();
-            vulkanModel.addVulkanMesh(new VulkanModel.VulkanMesh(verticesSize, indices.length,
-                    verticesData.position(), indicesData.position(), globalMaterialIdx, animWeightsStgBuffer.getDataBuffer().position()));
+            vulkanModel.addVulkanMesh(new VulkanModel.VulkanMesh(verticesSize, indices.length, verticesBuffer.position(), indicesBuffer.position(), globalMaterialIdx, weightsBuffer.position()));
 
             var rows = positions.length / 3;
             for (var row = 0; row < rows; row++) {
                 var startPos = row * 3;
                 var startTextCoord = row * 2;
-                verticesData.putFloat(positions[startPos]);
-                verticesData.putFloat(positions[startPos + 1]);
-                verticesData.putFloat(positions[startPos + 2]);
-                verticesData.putFloat(normals[startPos]);
-                verticesData.putFloat(normals[startPos + 1]);
-                verticesData.putFloat(normals[startPos + 2]);
-                verticesData.putFloat(tangents[startPos]);
-                verticesData.putFloat(tangents[startPos + 1]);
-                verticesData.putFloat(tangents[startPos + 2]);
-                verticesData.putFloat(biTangents[startPos]);
-                verticesData.putFloat(biTangents[startPos + 1]);
-                verticesData.putFloat(biTangents[startPos + 2]);
-                verticesData.putFloat(textCoords[startTextCoord]);
-                verticesData.putFloat(textCoords[startTextCoord + 1]);
+                verticesBuffer.putFloat(positions[startPos])
+                        .putFloat(positions[startPos + 1])
+                        .putFloat(positions[startPos + 2])
+                        .putFloat(normals[startPos])
+                        .putFloat(normals[startPos + 1])
+                        .putFloat(normals[startPos + 2])
+                        .putFloat(tangents[startPos])
+                        .putFloat(tangents[startPos + 1])
+                        .putFloat(tangents[startPos + 2])
+                        .putFloat(biTangents[startPos])
+                        .putFloat(biTangents[startPos + 1])
+                        .putFloat(biTangents[startPos + 2])
+                        .putFloat(textCoords[startTextCoord])
+                        .putFloat(textCoords[startTextCoord + 1]);
             }
 
-            Arrays.stream(indices).forEach(indicesData::putInt);
+            Arrays.stream(indices).forEach(indicesBuffer::putInt);
 
-            loadWeightsBuffer(modelData, animWeightsStgBuffer, meshCount);
+            loadWeightsBuffer(modelData, animWeightsStagingBuffer, meshCount);
             meshCount++;
         }
     }
@@ -332,11 +334,11 @@ public class GlobalBuffers {
         var device = cmdPool.getDevice();
         var cmd = new CommandBuffer(cmdPool, true, true);
 
-        var verticesStgBuffer = new StgBuffer(device, this.verticesBuffer.getRequestedSize());
-        var indicesStgBuffer = new StgBuffer(device, this.indicesBuffer.getRequestedSize());
-        var materialsStgBuffer = new StgBuffer(device, this.materialsBuffer.getRequestedSize());
-        var animJointMatricesStgBuffer = new StgBuffer(device, this.animJointMatricesBuffer.getRequestedSize());
-        var animWeightsStgBuffer = new StgBuffer(device, this.animWeightsBuffer.getRequestedSize());
+        var verticesStgBuffer = new StagingBuffer(device, this.verticesBuffer.getRequestedSize());
+        var indicesStgBuffer = new StagingBuffer(device, this.indicesBuffer.getRequestedSize());
+        var materialsStgBuffer = new StagingBuffer(device, this.materialsBuffer.getRequestedSize());
+        var animJointMatricesStgBuffer = new StagingBuffer(device, this.animJointMatricesBuffer.getRequestedSize());
+        var animWeightsStgBuffer = new StagingBuffer(device, this.animWeightsBuffer.getRequestedSize());
 
         cmd.beginRecording();
 
@@ -410,12 +412,12 @@ public class GlobalBuffers {
             if (this.numIndirectCommands > 0) {
                 cmd.beginRecording();
 
-                var indirectStgBuffer = new StgBuffer(device, (long) IND_COMMAND_STRIDE * this.numIndirectCommands);
+                var indirectStgBuffer = new StagingBuffer(device, (long) IND_COMMAND_STRIDE * this.numIndirectCommands);
                 if (this.indirectBuffer != null) this.indirectBuffer.close();
                 this.indirectBuffer = new VulkanBuffer(device, indirectStgBuffer.stgVulkanBuffer.getRequestedSize(),
                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-                var dataBuffer = indirectStgBuffer.getDataBuffer();
+                var dataBuffer = indirectStgBuffer.mappedMem();
                 var indCommandBuffer = new VkDrawIndexedIndirectCommand.Buffer(dataBuffer);
 
                 indexedIndirectCommandList.forEach(indCommandBuffer::put);
@@ -437,35 +439,34 @@ public class GlobalBuffers {
         }
     }
 
-    private void loadWeightsBuffer(ModelData modelData, StgBuffer animWeightsBuffer, int meshCount) {
+    private void loadWeightsBuffer(ModelData modelData, StagingBuffer animWeightsBuffer, int meshCount) {
         var animMeshDataList = modelData.getAnimMeshDataList();
         if (animMeshDataList == null || animMeshDataList.isEmpty()) return;
-
         var animMeshData = animMeshDataList.get(meshCount);
         var weights = animMeshData.weights();
         var boneIds = animMeshData.boneIds();
-
-        var dataBuffer = animWeightsBuffer.getDataBuffer();
+        var dataBuffer = animWeightsBuffer.mappedMem();
 
         var rows = weights.length / 4;
         for (var row = 0; row < rows; row++) {
             var startPos = row * 4;
-            dataBuffer.putFloat(weights[startPos]);
-            dataBuffer.putFloat(weights[startPos + 1]);
-            dataBuffer.putFloat(weights[startPos + 2]);
-            dataBuffer.putFloat(weights[startPos + 3]);
-            dataBuffer.putFloat(boneIds[startPos]);
-            dataBuffer.putFloat(boneIds[startPos + 1]);
-            dataBuffer.putFloat(boneIds[startPos + 2]);
-            dataBuffer.putFloat(boneIds[startPos + 3]);
+            dataBuffer.putFloat(weights[startPos])
+                    .putFloat(weights[startPos + 1])
+                    .putFloat(weights[startPos + 2])
+                    .putFloat(weights[startPos + 3])
+                    .putFloat(boneIds[startPos])
+                    .putFloat(boneIds[startPos + 1])
+                    .putFloat(boneIds[startPos + 2])
+                    .putFloat(boneIds[startPos + 3]);
         }
     }
 
-    private static class StgBuffer {
+    private static class StagingBuffer {
+
         private final ByteBuffer dataBuffer;
         private final VulkanBuffer stgVulkanBuffer;
 
-        public StgBuffer(Device device, long size) {
+        public StagingBuffer(Device device, long size) {
             this.stgVulkanBuffer = new VulkanBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             var mappedMemory = this.stgVulkanBuffer.map();
             this.dataBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) this.stgVulkanBuffer.getRequestedSize());
@@ -476,14 +477,16 @@ public class GlobalBuffers {
             this.stgVulkanBuffer.close();
         }
 
-        public ByteBuffer getDataBuffer() {
+        public ByteBuffer mappedMem() {
             return this.dataBuffer;
         }
 
         private void recordTransferCommand(CommandBuffer cmd, VulkanBuffer dstBuffer) {
             try (var stack = MemoryStack.stackPush()) {
                 var copyRegion = VkBufferCopy.calloc(1, stack)
-                        .srcOffset(0).dstOffset(0).size(this.stgVulkanBuffer.getRequestedSize());
+                        .srcOffset(0)
+                        .dstOffset(0)
+                        .size(this.stgVulkanBuffer.getRequestedSize());
                 vkCmdCopyBuffer(cmd.getVkCommandBuffer(), this.stgVulkanBuffer.getBuffer(), dstBuffer.getBuffer(), copyRegion);
             }
         }
