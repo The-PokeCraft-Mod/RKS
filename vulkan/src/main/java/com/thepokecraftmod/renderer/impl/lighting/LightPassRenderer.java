@@ -1,5 +1,9 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
@@ -36,7 +40,7 @@ public class LightPassRenderer {
     private AttachmentsDescriptorSet attachmentsDescriptorSet;
     private AttachmentsLayout attachmentsLayout;
     private CommandBuffer[] commandBuffers;
-    private DescriptorPool descriptorPool;
+    private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
     private Fence[] fences;
     private VulkanBuffer[] invMatricesBuffers;
@@ -91,7 +95,7 @@ public class LightPassRenderer {
         this.uniformDescriptorSetLayout.close();
         this.attachmentsDescriptorSet.close();
         this.attachmentsLayout.close();
-        this.descriptorPool.close();
+        this.pools.close();
         Arrays.stream(this.lightsBuffers).forEach(VulkanBuffer::close);
         this.pipeline.close();
         this.lightSettingsUploader.close();
@@ -117,7 +121,7 @@ public class LightPassRenderer {
         List<DescriptorPool.DescriptorTypeCount> descriptorTypeCounts = new ArrayList<>();
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(attachments.size(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(this.swapChain.getNumImages() * 3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-        this.descriptorPool = new DescriptorPool(this.device, descriptorTypeCounts);
+        this.pools = new PoolManager(this.device, descriptorTypeCounts);
     }
 
     private void createDescriptorSets(List<Attachment> attachments, int numImages) {
@@ -130,19 +134,16 @@ public class LightPassRenderer {
                 this.uniformDescriptorSetLayout,
         };
 
-        this.attachmentsDescriptorSet = new AttachmentsDescriptorSet(this.descriptorPool, this.attachmentsLayout,
+        this.attachmentsDescriptorSet = new AttachmentsDescriptorSet(this.pools.getPool(), this.attachmentsLayout,
                 attachments, 0);
 
         this.lightsDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
         this.invMatricesDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
         this.shadowsMatricesDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
         for (var i = 0; i < numImages; i++) {
-            this.lightsDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout,
-                    this.lightsBuffers[i], 0);
-            this.invMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout,
-                    this.invMatricesBuffers[i], 0);
-            this.shadowsMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout,
-                    this.shadowsMatricesBuffers[i], 0);
+            this.lightsDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.lightsBuffers[i], 0);
+            this.invMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.invMatricesBuffers[i], 0);
+            this.shadowsMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.shadowsMatricesBuffers[i], 0);
         }
     }
 

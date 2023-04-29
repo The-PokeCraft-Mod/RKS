@@ -6,7 +6,7 @@ import com.thepokecraftmod.renderer.vk.Device;
 import com.thepokecraftmod.renderer.vk.SwapChain;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static org.vulkanb.eng.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class LightingRenderPass {
 

@@ -1,5 +1,7 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.vk.descriptor;
 
+import com.thepokecraftmod.renderer.vk.VkUtils;
+import com.thepokecraftmod.renderer.vk.VulkanBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 import org.lwjgl.vulkan.VkDescriptorSetAllocateInfo;

@@ -4,11 +4,11 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutBinding;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutCreateInfo;
 import org.tinylog.Logger;
-import com.thepokecraftmod.renderer.vk.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
 import com.thepokecraftmod.renderer.vk.Device;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static org.vulkanb.eng.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class AttachmentsLayout extends DescriptorSetLayout {
 
@@ -31,7 +31,7 @@ public class AttachmentsLayout extends DescriptorSetLayout {
             var lp = stack.mallocLong(1);
             ok(vkCreateDescriptorSetLayout(device.getVkDevice(), layoutInfo, null, lp),
                     "Failed to create descriptor set layout");
-            super.vkDescriptorLayout = lp.get(0);
+            super.layout = lp.get(0);
         }
     }
 }

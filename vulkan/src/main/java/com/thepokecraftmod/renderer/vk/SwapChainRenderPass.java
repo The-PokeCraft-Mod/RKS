@@ -4,7 +4,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static org.vulkanb.eng.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class SwapChainRenderPass {
 

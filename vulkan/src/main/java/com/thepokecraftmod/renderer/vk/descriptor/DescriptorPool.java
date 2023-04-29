@@ -1,5 +1,8 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.vk.descriptor;
 
+import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.VkUtils;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorPoolCreateInfo;
 import org.lwjgl.vulkan.VkDescriptorPoolSize;
@@ -9,12 +12,12 @@ import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-// TODO: better layout for having multiple objects
 public class DescriptorPool {
+
     private final Device device;
     private final long descriptorPool;
 
-    public DescriptorPool(Device device, List<DescriptorTypeCount> descriptorTypeCounts) {
+    public DescriptorPool(Device device, List<DescriptorTypeCount> descriptorTypeCounts, int objects) {
         try (var stack = MemoryStack.stackPush()) {
             Logger.debug("Creating descriptor pool");
             this.device = device;
@@ -25,14 +28,14 @@ public class DescriptorPool {
                 maxSets += descriptorTypeCounts.get(i).count();
                 typeCounts.get(i)
                         .type(descriptorTypeCounts.get(i).descriptorType())
-                        .descriptorCount(descriptorTypeCounts.get(i).count());
+                        .descriptorCount(descriptorTypeCounts.get(i).count() * objects);
             }
 
             var descriptorPoolInfo = VkDescriptorPoolCreateInfo.calloc(stack)
                     .sType$Default()
                     .flags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
                     .pPoolSizes(typeCounts)
-                    .maxSets(maxSets);
+                    .maxSets(maxSets * objects);
 
             var pDescriptorPool = stack.mallocLong(1);
             VkUtils.ok(vkCreateDescriptorPool(device.getVkDevice(), descriptorPoolInfo, null, pDescriptorPool), "Failed to create descriptor pool");

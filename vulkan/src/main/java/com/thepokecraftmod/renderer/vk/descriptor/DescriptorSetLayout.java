@@ -1,5 +1,8 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.vk.descriptor;
 
+import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.VkUtils;
+import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutBinding;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutCreateInfo;
@@ -7,22 +10,24 @@ import org.tinylog.Logger;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public abstract class DescriptorSetLayout {
-    private final Device device;
+public abstract class DescriptorSetLayout implements VkWrapper<Long> {
 
-    protected long vkDescriptorLayout;
+    private final Device device;
+    protected long layout;
 
     protected DescriptorSetLayout(Device device) {
         this.device = device;
     }
 
+    @Override
     public void close() {
         Logger.debug("Destroying descriptor set layout");
-        vkDestroyDescriptorSetLayout(this.device.getVkDevice(), this.vkDescriptorLayout, null);
+        vkDestroyDescriptorSetLayout(this.device.getVkDevice(), this.layout, null);
     }
 
-    public long vk() {
-        return this.vkDescriptorLayout;
+    @Override
+    public Long vk() {
+        return layout;
     }
 
     public static class DynUniformDescriptorSetLayout extends SimpleDescriptorSetLayout {
@@ -56,7 +61,7 @@ public abstract class DescriptorSetLayout {
                 var pSetLayout = stack.mallocLong(1);
                 VkUtils.ok(vkCreateDescriptorSetLayout(device.getVkDevice(), layoutInfo, null, pSetLayout),
                         "Failed to create descriptor set layout");
-                super.vkDescriptorLayout = pSetLayout.get(0);
+                super.layout = pSetLayout.get(0);
             }
         }
     }

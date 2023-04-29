@@ -1,5 +1,9 @@
 package com.thepokecraftmod.renderer.impl.animation;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.shaderc.Shaderc;
 import com.thepokecraftmod.renderer.Settings;
@@ -22,7 +26,7 @@ public class GpuAnimator {
 
     private CommandBuffer commandBuffer;
     private ComputePipeline computePipeline;
-    private DescriptorPool descriptorPool;
+    private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
     private DescriptorSet.StorageDescriptorSet dstVerticesDescriptorSet;
     private Fence fence;
@@ -47,7 +51,7 @@ public class GpuAnimator {
         this.computePipeline.close();
         this.shaderProgram.close();
         this.commandBuffer.close();
-        this.descriptorPool.close();
+        this.pools.close();
         this.storageDescriptorSetLayout.close();
         this.fence.close();
     }
@@ -58,7 +62,7 @@ public class GpuAnimator {
     }
 
     private void createDescriptorPool() {
-        this.descriptorPool = new DescriptorPool(this.device, List.of(new DescriptorPool.DescriptorTypeCount(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)));
+        this.pools = new PoolManager(this.device, List.of(new DescriptorPool.DescriptorTypeCount(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)));
     }
 
     private void createDescriptorSets() {
@@ -84,10 +88,10 @@ public class GpuAnimator {
     }
 
     public void onAnimatedEntitiesLoaded(GlobalBuffers globalBuffers) {
-        this.srcVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getVerticesBuffer(), 0);
-        this.weightsDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getAnimWeightsBuffer(), 0);
-        this.dstVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getAnimVerticesBuffer(), 0);
-        this.jointMatricesDescriptorSet = new DescriptorSet.StorageDescriptorSet(descriptorPool, storageDescriptorSetLayout, globalBuffers.getAnimJointMatricesBuffer(), 0);
+        this.srcVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(pools.getPool(), storageDescriptorSetLayout, globalBuffers.getVerticesBuffer(), 0);
+        this.weightsDescriptorSet = new DescriptorSet.StorageDescriptorSet(pools.getPool(), storageDescriptorSetLayout, globalBuffers.getAnimWeightsBuffer(), 0);
+        this.dstVerticesDescriptorSet = new DescriptorSet.StorageDescriptorSet(pools.getPool(), storageDescriptorSetLayout, globalBuffers.getAnimVerticesBuffer(), 0);
+        this.jointMatricesDescriptorSet = new DescriptorSet.StorageDescriptorSet(pools.getPool(), storageDescriptorSetLayout, globalBuffers.getAnimJointMatricesBuffer(), 0);
     }
 
     public void recordCommandBuffer(GlobalBuffers globalBuffers) {

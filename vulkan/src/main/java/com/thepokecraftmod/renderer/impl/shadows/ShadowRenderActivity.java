@@ -1,5 +1,9 @@
 package com.thepokecraftmod.renderer.impl.shadows;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.shaderc.Shaderc;
 import org.lwjgl.vulkan.VkClearValue;
@@ -30,7 +34,7 @@ public class ShadowRenderActivity {
     private final ShadowsFrameBuffer shadowsFrameBuffer;
 
     private List<CascadeShadow> cascadeShadows;
-    private DescriptorPool descriptorPool;
+    private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
     private Pipeline pipeLine;
     private DescriptorSet.UniformDescriptorSet[] projMatrixDescriptorSet;
@@ -56,7 +60,7 @@ public class ShadowRenderActivity {
         this.pipeLine.close();
         Arrays.stream(this.shadowsUniforms).forEach(VulkanBuffer::close);
         this.uniformDescriptorSetLayout.close();
-        this.descriptorPool.close();
+        this.pools.close();
         this.shaderProgram.close();
         this.shadowsFrameBuffer.close();
     }
@@ -64,7 +68,7 @@ public class ShadowRenderActivity {
     private void createDescriptorPool(int numImages) {
         List<DescriptorPool.DescriptorTypeCount> descriptorTypeCounts = new ArrayList<>();
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(numImages, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-        this.descriptorPool = new DescriptorPool(this.device, descriptorTypeCounts);
+        this.pools = new PoolManager(this.device, descriptorTypeCounts);
     }
 
     private void createDescriptorSets(int numImages) {
@@ -76,11 +80,8 @@ public class ShadowRenderActivity {
         this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet[numImages];
         this.shadowsUniforms = new VulkanBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
-            this.shadowsUniforms[i] = new VulkanBuffer(this.device, (long)
-                    VkConstants.MAT4X4_SIZE * VkConstants.SHADOW_MAP_CASCADE_COUNT,
-                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
-            this.projMatrixDescriptorSet[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout,
-                    this.shadowsUniforms[i], 0);
+            this.shadowsUniforms[i] = new VulkanBuffer(this.device, (long) VkConstants.MAT4X4_SIZE * VkConstants.SHADOW_MAP_CASCADE_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            this.projMatrixDescriptorSet[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.shadowsUniforms[i], 0);
         }
     }
 
@@ -195,8 +196,7 @@ public class ShadowRenderActivity {
                 vkCmdBindVertexBuffers(cmdHandle, 1, instanceBuffer, offsets);
                 vkCmdBindIndexBuffer(cmdHandle, globalBuffers.getIndicesBuffer().getBuffer(), 0, VK_INDEX_TYPE_UINT32);
                 var animIndirectBuffer = globalBuffers.getAnimIndirectBuffer();
-                vkCmdDrawIndexedIndirect(cmdHandle, animIndirectBuffer.getBuffer(), 0, globalBuffers.getNumAnimIndirectCommands(),
-                        GlobalBuffers.IND_COMMAND_STRIDE);
+                vkCmdDrawIndexedIndirect(cmdHandle, animIndirectBuffer.getBuffer(), 0, globalBuffers.getNumAnimIndirectCommands(), GlobalBuffers.IND_COMMAND_STRIDE);
             }
 
             vkCmdEndRenderPass(cmdHandle);

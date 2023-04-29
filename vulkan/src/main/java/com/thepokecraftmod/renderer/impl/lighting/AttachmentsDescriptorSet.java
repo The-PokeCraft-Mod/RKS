@@ -1,5 +1,7 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkDescriptorSetAllocateInfo;
@@ -9,7 +11,7 @@ import com.thepokecraftmod.renderer.vk.*;
 import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static org.vulkanb.eng.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class AttachmentsDescriptorSet extends DescriptorSet {
 

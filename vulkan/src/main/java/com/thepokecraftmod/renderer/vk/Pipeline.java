@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 import org.tinylog.Logger;

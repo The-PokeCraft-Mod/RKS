@@ -1,5 +1,8 @@
 package com.thepokecraftmod.renderer.impl.gui;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import imgui.ImGui;
 import imgui.ImVec4;
 import imgui.flag.ImGuiKey;
@@ -29,7 +32,7 @@ public class GuiPassRenderer {
     private static final String GUI_VERTEX_SHADER_FILE_GLSL = "gui_vertex.glsl";
     private static final String GUI_VERTEX_SHADER_FILE_SPV = GUI_VERTEX_SHADER_FILE_GLSL + ".spv";
     private final Device device;
-    private DescriptorPool descriptorPool;
+    private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
     private Texture fontsTexture;
     private TextureSampler fontsTextureSampler;
@@ -41,8 +44,7 @@ public class GuiPassRenderer {
     private DescriptorSetLayout.SamplerDescriptorSetLayout textureDescriptorSetLayout;
     private VulkanBuffer[] vertexBuffers;
 
-    public GuiPassRenderer(SwapChain swapChain, CommandPool commandPool, Queue queue, PipelineCache pipelineCache,
-                           long vkRenderPass) {
+    public GuiPassRenderer(SwapChain swapChain, CommandPool commandPool, Queue queue, PipelineCache pipelineCache, long renderPass) {
         this.swapChain = swapChain;
         this.device = swapChain.getDevice();
 
@@ -50,13 +52,13 @@ public class GuiPassRenderer {
         createUIResources(swapChain, commandPool, queue);
         createDescriptorPool();
         createDescriptorSets();
-        createPipeline(pipelineCache, vkRenderPass);
+        createPipeline(pipelineCache, renderPass);
     }
 
     public void close() {
         this.textureDescriptorSetLayout.close();
         this.fontsTextureSampler.close();
-        this.descriptorPool.close();
+        this.pools.close();
         this.fontsTexture.close();
         Arrays.stream(this.vertexBuffers).filter(Objects::nonNull).forEach(VulkanBuffer::close);
         Arrays.stream(this.indicesBuffers).filter(Objects::nonNull).forEach(VulkanBuffer::close);
@@ -68,7 +70,7 @@ public class GuiPassRenderer {
     private void createDescriptorPool() {
         List<DescriptorPool.DescriptorTypeCount> descriptorTypeCounts = new ArrayList<>();
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
-        this.descriptorPool = new DescriptorPool(this.device, descriptorTypeCounts);
+        this.pools = new PoolManager(this.device, descriptorTypeCounts);
     }
 
     private void createDescriptorSets() {
@@ -77,8 +79,7 @@ public class GuiPassRenderer {
                 this.textureDescriptorSetLayout,
         };
         this.fontsTextureSampler = new TextureSampler(this.device, 1);
-        this.textureDescriptorSet = new TextureDescriptorSet(this.descriptorPool, this.textureDescriptorSetLayout, this.fontsTexture,
-                this.fontsTextureSampler, 0);
+        this.textureDescriptorSet = new TextureDescriptorSet(this.pools.getPool(), this.textureDescriptorSetLayout, this.fontsTexture, this.fontsTextureSampler, 0);
     }
 
     private void createPipeline(PipelineCache pipelineCache, long vkRenderPass) {
@@ -205,9 +206,7 @@ public class GuiPassRenderer {
                     rect.extent(it -> it.width((int) (imVec4.z - imVec4.x)).height((int) (imVec4.w - imVec4.y)));
                     vkCmdSetScissor(cmdHandle, 0, rect);
                     var numElements = imDrawData.getCmdListCmdBufferElemCount(i, j);
-                    vkCmdDrawIndexed(cmdHandle, numElements, 1,
-                            offsetIdx + imDrawData.getCmdListCmdBufferIdxOffset(i, j),
-                            offsetVtx + imDrawData.getCmdListCmdBufferVtxOffset(i, j), 0);
+                    vkCmdDrawIndexed(cmdHandle, numElements, 1, offsetIdx + imDrawData.getCmdListCmdBufferIdxOffset(i, j), offsetVtx + imDrawData.getCmdListCmdBufferVtxOffset(i, j), 0);
                 }
                 offsetIdx += imDrawData.getCmdListIdxBufferSize(i);
                 offsetVtx += imDrawData.getCmdListVtxBufferSize(i);
@@ -217,9 +216,8 @@ public class GuiPassRenderer {
 
     public void resize(SwapChain swapChain) {
         this.swapChain = swapChain;
-        var imGuiIO = ImGui.getIO();
         var swapChainExtent = swapChain.getSwapChainExtent();
-        imGuiIO.setDisplaySize(swapChainExtent.width(), swapChainExtent.height());
+        ImGui.getIO().setDisplaySize(swapChainExtent.width(), swapChainExtent.height());
     }
 
     private void updateBuffers(int idx) {

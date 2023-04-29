@@ -7,7 +7,7 @@ import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.tinylog.Logger;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static org.vulkanb.eng.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class CommandBuffer {
     private final CommandPool commandPool;

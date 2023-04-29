@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.vulkanb.eng.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class Instance implements Closeable, VkWrapper<VkInstance> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Instance.class);

@@ -12,8 +12,8 @@ import java.nio.IntBuffer;
 import java.util.*;
 
 import static org.lwjgl.assimp.Assimp.*;
-import static org.vulkanb.eng.EngineUtils.listFloatToArray;
-import static org.vulkanb.eng.EngineUtils.listIntToArray;
+import static com.thepokecraftmod.renderer.EngineUtils.listFloatToArray;
+import static com.thepokecraftmod.renderer.EngineUtils.listIntToArray;
 
 @Deprecated
 public class ModelLoader {

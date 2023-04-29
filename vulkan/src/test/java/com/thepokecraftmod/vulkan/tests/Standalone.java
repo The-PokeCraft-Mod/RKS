@@ -97,7 +97,8 @@ public class Standalone implements RenderingImpl {
     private void loadJitModel() {
         var id = "typhlosion";
         var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui", true);
-        this.jit = new Entity("typhlosion", id, new Vector3f(0.0f, 0.0f, 0.0f));
+        models.add(data);
+        this.jit = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
         jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
         jit.updateModelMatrix();
         jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
@@ -115,7 +116,7 @@ public class Standalone implements RenderingImpl {
         this.scene = scene;
         var id = "rayquaza";
         var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
-        this.rayquaza = new Entity("rayquaza", id, new Vector3f(0.0f, 0.0f, 0.0f));
+        this.rayquaza = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
         maxFrameMap.put(rayquaza, data.getAnimationsList().get(0).frames().size());
         rayquaza.getRotation().rotateY((float) Math.toRadians(-90.0f));
         rayquaza.setScale(1);

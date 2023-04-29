@@ -1,6 +1,11 @@
 package com.thepokecraftmod.renderer.vk;
 
-public interface VkWrapper<T> {
+import java.io.Closeable;
+
+public interface VkWrapper<T> extends Closeable {
+
+    @Override
+    void close();
 
     T vk();
 }

@@ -1,5 +1,9 @@
 package com.thepokecraftmod.renderer.impl.geometry;
 
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.shaderc.Shaderc;
 import org.lwjgl.vulkan.VkClearValue;
@@ -32,7 +36,7 @@ public class GeometryPassRenderer implements Closeable {
     private final PipelineCache pipelineCache;
     private final Scene scene;
 
-    private DescriptorPool descriptorPool;
+    private PoolManager pools;
     private DescriptorSetLayout[] geometryDescriptorSetLayouts;
     private DescriptorSetLayout.DynUniformDescriptorSetLayout materialDescriptorSetLayout;
     private DescriptorSet.StorageDescriptorSet materialsDescriptorSet;
@@ -76,7 +80,7 @@ public class GeometryPassRenderer implements Closeable {
         this.textureDescriptorSetLayout.close();
         this.uniformDescriptorSetLayout.close();
         this.storageDescriptorSetLayout.close();
-        this.descriptorPool.close();
+        this.pools.close();
         this.shaderProgram.close();
         this.geometryFrameBuffer.close();
     }
@@ -88,7 +92,7 @@ public class GeometryPassRenderer implements Closeable {
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(engineProps.getMaxMaterials() * 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC));
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
-        this.descriptorPool = new DescriptorPool(this.device, descriptorTypeCounts);
+        this.pools = new PoolManager(this.device, descriptorTypeCounts);
     }
 
     private void createDescriptorSets(int numImages, GlobalBuffers globalBuffers) {
@@ -101,14 +105,14 @@ public class GeometryPassRenderer implements Closeable {
 
         this.textureSampler = new TextureSampler(this.device, 1);
         this.projMatrixUniform = new VulkanBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
-        this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout, this.projMatrixUniform, 0);
-        this.materialsDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.descriptorPool, this.storageDescriptorSetLayout, globalBuffers.getMaterialsBuffer(), 0);
+        this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.projMatrixUniform, 0);
+        this.materialsDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.pools.getPool(), this.storageDescriptorSetLayout, globalBuffers.getMaterialsBuffer(), 0);
 
         this.viewMatricesDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
         this.viewMatricesBuffer = new VulkanBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
             this.viewMatricesBuffer[i] = new VulkanBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
-            this.viewMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.descriptorPool, this.uniformDescriptorSetLayout, this.viewMatricesBuffer[i], 0);
+            this.viewMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.viewMatricesBuffer[i], 0);
         }
     }
 
@@ -140,9 +144,8 @@ public class GeometryPassRenderer implements Closeable {
         var textureList = new ArrayList<>(textureCacheList);
         var settings = Settings.getInstance();
         var maxTextures = settings.getMaxTextures();
-        for (var i = 0; i < maxTextures - textureCacheSize; i++)
-            textureList.add(textureCacheList.get(textureCacheSize - 1));
-        this.textureDescriptorSet = new TextureDescriptorSet(this.descriptorPool, this.textureDescriptorSetLayout, textureList, this.textureSampler, 0);
+        for (var i = 0; i < maxTextures - textureCacheSize; i++) textureList.add(textureCacheList.get(textureCacheSize - 1));
+        this.textureDescriptorSet = new TextureDescriptorSet(this.pools.getPool(), this.textureDescriptorSetLayout, textureList, this.textureSampler, 0);
     }
 
     public void recordCommandBuffer(CommandBuffer commandBuffer, GlobalBuffers globalBuffers, int idx) {
@@ -164,18 +167,32 @@ public class GeometryPassRenderer implements Closeable {
             var cmdHandle = commandBuffer.getVkCommandBuffer();
 
             vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
-
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
             vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipeline());
 
-            var viewport = VkViewport.calloc(1, stack).x(0).y(height).height(-height).width(width).minDepth(0.0f).maxDepth(1.0f);
+            var viewport = VkViewport.calloc(1, stack)
+                    .x(0)
+                    .y(height)
+                    .height(-height)
+                    .width(width)
+                    .minDepth(0.0f)
+                    .maxDepth(1.0f);
             vkCmdSetViewport(cmdHandle, 0, viewport);
 
-            var scissor = VkRect2D.calloc(1, stack).extent(it -> it.width(width).height(height)).offset(it -> it.x(0).y(0));
+            var scissor = VkRect2D.calloc(1, stack).extent(it -> it
+                    .width(width)
+                    .height(height)
+            ).offset(it -> it
+                    .x(0)
+                    .y(0)
+            );
             vkCmdSetScissor(cmdHandle, 0, scissor);
 
-            var descriptorSets = stack.mallocLong(4).put(0, this.projMatrixDescriptorSet.vk()).put(1, this.viewMatricesDescriptorSets[idx].vk()).put(2, this.materialsDescriptorSet.vk()).put(3, this.textureDescriptorSet.vk());
+            var descriptorSets = stack.mallocLong(4)
+                    .put(0, this.projMatrixDescriptorSet.vk())
+                    .put(1, this.viewMatricesDescriptorSets[idx].vk())
+                    .put(2, this.materialsDescriptorSet.vk())
+                    .put(3, this.textureDescriptorSet.vk());
 
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);
 
