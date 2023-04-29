@@ -163,7 +163,7 @@ public class ShadowRenderActivity {
             vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipeline());
 
             var descriptorSets = stack.mallocLong(1)
-                    .put(0, this.projMatrixDescriptorSet[idx].getVkDescriptorSet());
+                    .put(0, this.projMatrixDescriptorSet[idx].vk());
 
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);

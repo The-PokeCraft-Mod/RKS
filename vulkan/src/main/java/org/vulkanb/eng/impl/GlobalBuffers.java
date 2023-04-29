@@ -23,8 +23,7 @@ public class GlobalBuffers {
     public static final int IND_COMMAND_STRIDE = VkDrawIndexedIndirectCommand.SIZEOF;
     // Handle std430 alignment
     private static final int MATERIAL_PADDING = VkConstants.FLOAT_LENGTH * 3;
-    private static final int MATERIAL_SIZE = VkConstants.VEC4_SIZE + VkConstants.INT_LENGTH * 3 +
-            VkConstants.FLOAT_LENGTH * 2 + MATERIAL_PADDING;
+    private static final int MATERIAL_SIZE = VkConstants.VEC4_SIZE + VkConstants.INT_LENGTH * 3 + VkConstants.FLOAT_LENGTH * 2 + MATERIAL_PADDING;
     private final VulkanBuffer animJointMatricesBuffer;
     private final VulkanBuffer animWeightsBuffer;
     private final VulkanBuffer indicesBuffer;
@@ -41,18 +40,12 @@ public class GlobalBuffers {
 
     public GlobalBuffers(Device device) {
         Logger.debug("Creating global buffers");
-        var engProps = Settings.getInstance();
-        this.verticesBuffer = new VulkanBuffer(device, engProps.getMaxVerticesBuffer(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.indicesBuffer = new VulkanBuffer(device, engProps.getMaxIndicesBuffer(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        var maxMaterials = engProps.getMaxMaterials();
-        this.materialsBuffer = new VulkanBuffer(device, (long) maxMaterials * VkConstants.VEC4_SIZE * 9, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.animJointMatricesBuffer = new VulkanBuffer(device, engProps.getMaxJointMatricesBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.animWeightsBuffer = new VulkanBuffer(device, engProps.getMaxAnimWeightsBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        var settings = Settings.getInstance();
+        this.verticesBuffer = new VulkanBuffer(device, settings.getMaxVerticesBuffer(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.indicesBuffer = new VulkanBuffer(device, settings.getMaxIndicesBuffer(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.materialsBuffer = new VulkanBuffer(device, (long) settings.getMaxMaterials() * VkConstants.VEC4_SIZE * 9, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.animJointMatricesBuffer = new VulkanBuffer(device, settings.getMaxJointMatricesBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.animWeightsBuffer = new VulkanBuffer(device, settings.getMaxAnimWeightsBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
         this.numIndirectCommands = 0;
     }
 
@@ -123,8 +116,7 @@ public class GlobalBuffers {
         return this.vulkanAnimEntityList;
     }
 
-    private void loadAnimEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool,
-                                  Queue queue, int numSwapChainImages) {
+    private void loadAnimEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool, Queue queue, int numSwapChainImages) {
         this.vulkanAnimEntityList = new ArrayList<>();
         this.numAnimIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
@@ -211,8 +203,7 @@ public class GlobalBuffers {
         }
     }
 
-    public void loadEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool,
-                             Queue queue, int numSwapChainImages) {
+    public void loadEntities(List<VulkanModel> vulkanModelList, Scene scene, CommandPool commandPool, Queue queue, int numSwapChainImages) {
         loadStaticEntities(vulkanModelList, scene, commandPool, queue, numSwapChainImages);
         loadAnimEntities(vulkanModelList, scene, commandPool, queue, numSwapChainImages);
     }
@@ -249,10 +240,8 @@ public class GlobalBuffers {
         instanceBuffer.unMap();
     }
 
-    private List<VulkanModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StgBuffer
-            materialsStgBuffer,
-                                                           List<ModelData.Material> materialList, List<Texture> textureList) {
-        List<VulkanModel.VulkanMaterial> vulkanMaterialList = new ArrayList<>();
+    private List<VulkanModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StgBuffer materialsStgBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
+        var vulkanMaterialList = new ArrayList<VulkanModel.VulkanMaterial>();
         for (var material : materialList) {
             var dataBuffer = materialsStgBuffer.getDataBuffer();
 
@@ -285,8 +274,7 @@ public class GlobalBuffers {
         return vulkanMaterialList;
     }
 
-    private void loadMeshes(StgBuffer verticesStgBuffer, StgBuffer indicesStgBuffer, StgBuffer animWeightsStgBuffer,
-                            ModelData modelData, VulkanModel vulkanModel, List<VulkanModel.VulkanMaterial> vulkanMaterialList) {
+    private void loadMeshes(StgBuffer verticesStgBuffer, StgBuffer indicesStgBuffer, StgBuffer animWeightsStgBuffer, ModelData modelData, VulkanModel vulkanModel, List<VulkanModel.VulkanMaterial> vulkanMaterialList) {
         var verticesData = verticesStgBuffer.getDataBuffer();
         var indicesData = indicesStgBuffer.getDataBuffer();
         var meshDataList = modelData.getMeshDataList();
@@ -337,13 +325,12 @@ public class GlobalBuffers {
         }
     }
 
-    public List<VulkanModel> loadModels(List<ModelData> modelDataList, TextureCache textureCache, CommandPool
-            commandPool, Queue queue) {
+    public List<VulkanModel> loadModels(List<ModelData> models, TextureCache textureCache, CommandPool cmdPool, Queue queue) {
         List<VulkanModel> vulkanModelList = new ArrayList<>();
         List<Texture> textureList = new ArrayList<>();
 
-        var device = commandPool.getDevice();
-        var cmd = new CommandBuffer(commandPool, true, true);
+        var device = cmdPool.getDevice();
+        var cmd = new CommandBuffer(cmdPool, true, true);
 
         var verticesStgBuffer = new StgBuffer(device, this.verticesBuffer.getRequestedSize());
         var indicesStgBuffer = new StgBuffer(device, this.indicesBuffer.getRequestedSize());
@@ -357,12 +344,11 @@ public class GlobalBuffers {
         var defaultMaterialList = Collections.singletonList(new ModelData.Material());
         loadMaterials(device, textureCache, materialsStgBuffer, defaultMaterialList, textureList);
 
-        for (var modelData : modelDataList) {
+        for (var modelData : models) {
             var vulkanModel = new VulkanModel(modelData.getModelId());
             vulkanModelList.add(vulkanModel);
 
-            var vulkanMaterialList = loadMaterials(device, textureCache, materialsStgBuffer,
-                    modelData.getMaterialList(), textureList);
+            var vulkanMaterialList = loadMaterials(device, textureCache, materialsStgBuffer, modelData.getMaterialList(), textureList);
             loadMeshes(verticesStgBuffer, indicesStgBuffer, animWeightsStgBuffer, modelData, vulkanModel, vulkanMaterialList);
             loadAnimationData(modelData, vulkanModel, animJointMatricesStgBuffer);
         }
@@ -370,8 +356,7 @@ public class GlobalBuffers {
         // We need to ensure that at least we have one texture
         if (textureList.isEmpty()) {
             var settings = Settings.getInstance();
-            var defaultTexture = textureCache.createTexture(device, settings.getDefaultTexturePath(),
-                    VK_FORMAT_R8G8B8A8_SRGB);
+            var defaultTexture = textureCache.createTexture(device, settings.getDefaultTexturePath(), VK_FORMAT_R8G8B8A8_SRGB);
             textureList.add(defaultTexture);
         }
 

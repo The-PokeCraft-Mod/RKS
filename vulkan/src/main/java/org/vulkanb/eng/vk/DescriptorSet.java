@@ -11,7 +11,7 @@ public abstract class DescriptorSet {
 
     protected long vkDescriptorSet;
 
-    public long getVkDescriptorSet() {
+    public long vk() {
         return this.vkDescriptorSet;
     }
 
@@ -59,8 +59,7 @@ public abstract class DescriptorSet {
 
     public static class StorageDescriptorSet extends SimpleDescriptorSet {
 
-        public StorageDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout,
-                                    VulkanBuffer buffer, int binding) {
+        public StorageDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VulkanBuffer buffer, int binding) {
             super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer.getRequestedSize());
         }
     }

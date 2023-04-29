@@ -1,5 +1,6 @@
 package com.thepokecraftmod.vulkan.tests;
 
+import com.thepokecraftmod.rks.model.animation.TransformStorage;
 import com.thepokecraftmod.vulkan.util.DebugWindow;
 import org.joml.Vector3f;
 import org.vulkanb.eng.RKS;
@@ -10,26 +11,29 @@ import org.vulkanb.eng.impl.gui.GuiPassRenderer;
 import org.vulkanb.eng.scene.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Standalone implements RenderingImpl {
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float MOVEMENT_SPEED = 10.0f / 1000000000f;
+    private final Map<Entity, Integer> maxFrameMap = new HashMap<>();
     private static RKS RKS;
     private float angleInc;
     private Entity rayquaza;
     private Entity jit;
     private Light directionalLight;
     private float lightAngle = 90.1f;
-    private int maxFrames = 0; // FIXME: doesnt calc for other models
     private boolean loadedJitModel = false;
     private Render renderer;
     private Scene scene;
+    private final List<ModelData> models = new ArrayList<>();
 
     public static void main(String[] args) {
-//        System.loadLibrary("renderdoc");
+        System.loadLibrary("renderdoc");
         Standalone.RKS = new RKS(new Standalone(), new DebugWindow("RKS Standalone Test", new GuiPassRenderer.KeyCallback(), new GuiPassRenderer.CharCallBack()));
         RKS.start();
     }
@@ -78,25 +82,33 @@ public class Standalone implements RenderingImpl {
 
         var entityAnimation = this.rayquaza.getEntityAnimation();
         if (entityAnimation != null && entityAnimation.isStarted()) {
-            var currentFrame = Math.floorMod(entityAnimation.getCurrentFrame() + 1, this.maxFrames);
+            var currentFrame = Math.floorMod(entityAnimation.getCurrentFrame() + 1, maxFrameMap.get(rayquaza));
             entityAnimation.setCurrentFrame(currentFrame);
+        }
+
+        if(jit != null) {
+            entityAnimation = this.jit.getEntityAnimation();
+            if (entityAnimation != null && entityAnimation.isStarted()) {
+                var currentFrame = Math.floorMod(entityAnimation.getCurrentFrame() + 1, maxFrameMap.computeIfAbsent(jit, entity -> 0));
+                entityAnimation.setCurrentFrame(currentFrame);
+            }
         }
     }
 
     private void loadJitModel() {
         var id = "typhlosion";
         var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui", true);
-        this.maxFrames = data.getAnimationsList().get(0).frames().size();
         this.jit = new Entity("typhlosion", id, new Vector3f(0.0f, 0.0f, 0.0f));
         jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
         jit.setScale(1);
         jit.updateModelMatrix();
         jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
         scene.addEntity(jit);
+        maxFrameMap.put(jit, data.getAnimationsList().get(0).frames().size());
 
         renderer.entitiesLoadedTimeStamp = 0;
-        renderer.loadModels(List.of(data));
         this.loadedJitModel = true;
+        renderer.loadModels(List.of(data));
     }
 
     @Override
@@ -105,23 +117,23 @@ public class Standalone implements RenderingImpl {
         this.scene = scene;
         var id = "rayquaza";
         var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
-        this.maxFrames = data.getAnimationsList().get(0).frames().size();
         this.rayquaza = new Entity("rayquaza", id, new Vector3f(0.0f, 0.0f, 0.0f));
+        maxFrameMap.put(rayquaza, data.getAnimationsList().get(0).frames().size());
         rayquaza.getRotation().rotateY((float) Math.toRadians(-90.0f));
         rayquaza.setScale(1);
         rayquaza.updateModelMatrix();
         rayquaza.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
         scene.addEntity(rayquaza);
+        this.models.add(data);
 
-        renderer.loadModels(List.of(data));
+        renderer.loadModels(models);
 
         var camera = scene.getCamera();
         camera.setPosition(-6.0f, 2.0f, 0.0f);
         camera.setRotation((float) Math.toRadians(20.0f), (float) Math.toRadians(90.f));
 
         scene.getAmbientLight().set(0.2f, 0.2f, 0.2f, 1.0f);
-        List<Light> lights = new ArrayList<>();
-        this.directionalLight = new Light();
+        var lights = new ArrayList<>(List.of(this.directionalLight = new Light()));
         directionalLight.getColor().set(1.0f, 1.0f, 1.0f, 1.0f);
         lights.add(directionalLight);
         updateDirectionalLight();

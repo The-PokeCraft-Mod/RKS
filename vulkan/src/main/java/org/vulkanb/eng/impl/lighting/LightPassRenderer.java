@@ -247,10 +247,10 @@ public class LightPassRenderer {
             vkCmdSetScissor(cmdHandle, 0, scissor);
 
             var descriptorSets = stack.mallocLong(4)
-                    .put(0, this.attachmentsDescriptorSet.getVkDescriptorSet())
-                    .put(1, this.lightsDescriptorSets[idx].getVkDescriptorSet())
-                    .put(2, this.invMatricesDescriptorSets[idx].getVkDescriptorSet())
-                    .put(3, this.shadowsMatricesDescriptorSets[idx].getVkDescriptorSet());
+                    .put(0, this.attachmentsDescriptorSet.vk())
+                    .put(1, this.lightsDescriptorSets[idx].vk())
+                    .put(2, this.invMatricesDescriptorSets[idx].vk())
+                    .put(3, this.shadowsMatricesDescriptorSets[idx].vk());
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     this.pipeline.getVkPipelineLayout(), 0, descriptorSets, null);
 

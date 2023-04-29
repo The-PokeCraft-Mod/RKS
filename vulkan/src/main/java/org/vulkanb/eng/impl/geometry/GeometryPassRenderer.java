@@ -137,7 +137,7 @@ public class GeometryPassRenderer implements Closeable {
         // up to the number defined in the layout (reusing last texture)
         var textureCacheList = textureCache.getAsList();
         var textureCacheSize = textureCacheList.size();
-        List<Texture> textureList = new ArrayList<>(textureCacheList);
+        var textureList = new ArrayList<>(textureCacheList);
         var settings = Settings.getInstance();
         var maxTextures = settings.getMaxTextures();
         for (var i = 0; i < maxTextures - textureCacheSize; i++)
@@ -175,7 +175,7 @@ public class GeometryPassRenderer implements Closeable {
             var scissor = VkRect2D.calloc(1, stack).extent(it -> it.width(width).height(height)).offset(it -> it.x(0).y(0));
             vkCmdSetScissor(cmdHandle, 0, scissor);
 
-            var descriptorSets = stack.mallocLong(4).put(0, this.projMatrixDescriptorSet.getVkDescriptorSet()).put(1, this.viewMatricesDescriptorSets[idx].getVkDescriptorSet()).put(2, this.materialsDescriptorSet.getVkDescriptorSet()).put(3, this.textureDescriptorSet.getVkDescriptorSet());
+            var descriptorSets = stack.mallocLong(4).put(0, this.projMatrixDescriptorSet.vk()).put(1, this.viewMatricesDescriptorSets[idx].vk()).put(2, this.materialsDescriptorSet.vk()).put(3, this.textureDescriptorSet.vk());
 
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);
 

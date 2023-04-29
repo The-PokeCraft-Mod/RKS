@@ -91,24 +91,22 @@ public class GpuAnimator {
     }
 
     public void recordCommandBuffer(GlobalBuffers globalBuffers) {
-        this.fence.waitForFence();
-        this.fence.reset();
-
-        this.commandBuffer.reset();
-        this.commandBuffer.beginRecording();
-
         try (var stack = MemoryStack.stackPush()) {
+            this.fence.waitForFence();
+            this.fence.reset();
+
+            this.commandBuffer.reset();
+            this.commandBuffer.beginRecording();
             var cmdHandle = this.commandBuffer.getVkCommandBuffer();
 
             vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
-
             vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipeline());
 
             var descriptorSets = stack.mallocLong(4)
-                    .put(this.srcVerticesDescriptorSet.getVkDescriptorSet())
-                    .put(this.weightsDescriptorSet.getVkDescriptorSet())
-                    .put(this.dstVerticesDescriptorSet.getVkDescriptorSet())
-                    .put(this.jointMatricesDescriptorSet.getVkDescriptorSet())
+                    .put(this.srcVerticesDescriptorSet.vk())
+                    .put(this.weightsDescriptorSet.vk())
+                    .put(this.dstVerticesDescriptorSet.vk())
+                    .put(this.jointMatricesDescriptorSet.vk())
                     .flip();
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipelineLayout(), 0, descriptorSets, null);
 

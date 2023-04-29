@@ -187,7 +187,7 @@ public class GuiPassRenderer {
                     VK_SHADER_STAGE_VERTEX_BIT, 0, pushConstantBuffer);
 
             var descriptorSets = stack.mallocLong(1)
-                    .put(0, this.textureDescriptorSet.getVkDescriptorSet());
+                    .put(0, this.textureDescriptorSet.vk());
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     this.pipeline.getVkPipelineLayout(), 0, descriptorSets, null);
 

@@ -15,9 +15,9 @@ public class DescriptorPool {
     private final long descriptorPool;
 
     public DescriptorPool(Device device, List<DescriptorTypeCount> descriptorTypeCounts) {
-        Logger.debug("Creating descriptor pool");
-        this.device = device;
         try (var stack = MemoryStack.stackPush()) {
+            Logger.debug("Creating descriptor pool");
+            this.device = device;
             var maxSets = 0;
             var typeCount = descriptorTypeCounts.size();
             var typeCounts = VkDescriptorPoolSize.calloc(typeCount, stack);
@@ -25,14 +25,14 @@ public class DescriptorPool {
                 maxSets += descriptorTypeCounts.get(i).count();
                 typeCounts.get(i)
                         .type(descriptorTypeCounts.get(i).descriptorType())
-                        .descriptorCount(descriptorTypeCounts.get(i).count());
+                        .descriptorCount(descriptorTypeCounts.get(i).count() * 2);
             }
 
             var descriptorPoolInfo = VkDescriptorPoolCreateInfo.calloc(stack)
                     .sType$Default()
                     .flags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
                     .pPoolSizes(typeCounts)
-                    .maxSets(maxSets);
+                    .maxSets(maxSets * 2);
 
             var pDescriptorPool = stack.mallocLong(1);
             VkUtils.ok(vkCreateDescriptorPool(device.getVkDevice(), descriptorPoolInfo, null, pDescriptorPool), "Failed to create descriptor pool");
@@ -50,8 +50,7 @@ public class DescriptorPool {
             var longBuffer = stack.mallocLong(1);
             longBuffer.put(0, vkDescriptorSet);
 
-            VkUtils.ok(vkFreeDescriptorSets(this.device.getVkDevice(), this.descriptorPool, longBuffer),
-                    "Failed to free descriptor set");
+            VkUtils.ok(vkFreeDescriptorSets(this.device.getVkDevice(), this.descriptorPool, longBuffer), "Failed to free descriptor set");
         }
     }
 
@@ -63,6 +62,8 @@ public class DescriptorPool {
         return this.descriptorPool;
     }
 
-    public record DescriptorTypeCount(int count, int descriptorType) {
-    }
+    public record DescriptorTypeCount(
+            int count,
+            int descriptorType
+    ) {}
 }

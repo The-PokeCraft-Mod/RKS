@@ -21,7 +21,7 @@ import static org.lwjgl.vulkan.VK11.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BI
 
 public class Render {
 
-    private final GpuAnimator gpuAnimator;
+    private GpuAnimator gpuAnimator;
     private final CommandPool commandPool;
     private final Device device;
     private final GeometryPassRenderer geometryPassRenderer;
@@ -168,18 +168,16 @@ public class Render {
     }
 
     private void resize(Window window) {
-        var engProps = Settings.getInstance();
-
+        var settings = Settings.getInstance();
         this.device.waitIdle();
         this.graphQueue.waitIdle();
 
         this.swapChain.close();
-
-        this.swapChain = new SwapChain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
+        this.swapChain = new SwapChain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());
         this.geometryPassRenderer.resize(this.swapChain);
         this.shadowRenderActivity.resize(this.swapChain);
         recordCommands();
-        List<Attachment> attachments = new ArrayList<>(this.geometryPassRenderer.getAttachments());
+        var attachments = new ArrayList<>(this.geometryPassRenderer.getAttachments());
         attachments.add(this.shadowRenderActivity.getDepthAttachment());
         this.lightPassRenderer.resize(this.swapChain, attachments);
         this.guiPassRenderer.resize(this.swapChain);
