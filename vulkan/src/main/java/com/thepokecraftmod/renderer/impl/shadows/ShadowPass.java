@@ -22,7 +22,7 @@ import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class ShadowRenderActivity {
+public class ShadowPass {
 
     private static final String SHADOW_GEOMETRY_SHADER_FILE_GLSL = "shadow_geometry.glsl";
     private static final String SHADOW_GEOMETRY_SHADER_FILE_SPV = SHADOW_GEOMETRY_SHADER_FILE_GLSL + ".spv";
@@ -43,7 +43,7 @@ public class ShadowRenderActivity {
     private SwapChain swapChain;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
 
-    public ShadowRenderActivity(SwapChain swapChain, PipelineCache pipelineCache, Scene scene) {
+    public ShadowPass(SwapChain swapChain, PipelineCache pipelineCache, Scene scene) {
         this.swapChain = swapChain;
         this.scene = scene;
         this.device = swapChain.getDevice();

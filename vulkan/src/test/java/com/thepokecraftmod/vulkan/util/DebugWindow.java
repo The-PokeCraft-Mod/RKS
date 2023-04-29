@@ -1,10 +1,8 @@
 package com.thepokecraftmod.vulkan.util;
 
-import org.lwjgl.glfw.GLFWCharCallbackI;
-import org.lwjgl.glfw.GLFWKeyCallbackI;
-import org.lwjgl.system.MemoryUtil;
 import com.thepokecraftmod.renderer.MouseInput;
 import com.thepokecraftmod.renderer.Window;
+import org.lwjgl.system.MemoryUtil;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -18,7 +16,7 @@ public class DebugWindow implements Window {
     private boolean resized;
     private int width;
 
-    public DebugWindow(String title, GLFWKeyCallbackI keyCallback, GLFWCharCallbackI charCallback) {
+    public DebugWindow(String title) {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
         if (!glfwVulkanSupported())
@@ -39,9 +37,7 @@ public class DebugWindow implements Window {
 
         glfwSetKeyCallback(this.windowHandle, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true);
-            if (keyCallback != null) keyCallback.invoke(window, key, scancode, action, mods);
         });
-        if (charCallback != null) glfwSetCharCallback(this.windowHandle, charCallback);
 
         this.mouseInput = new MouseInput(this.windowHandle);
     }

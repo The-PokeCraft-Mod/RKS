@@ -1,10 +1,8 @@
 package com.thepokecraftmod.vulkan.tests;
 
 import com.thepokecraftmod.renderer.RKS;
-import com.thepokecraftmod.renderer.RenderingImpl;
+import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
-import com.thepokecraftmod.renderer.impl.Render;
-import com.thepokecraftmod.renderer.impl.gui.GuiPassRenderer;
 import com.thepokecraftmod.renderer.scene.*;
 import com.thepokecraftmod.vulkan.util.DebugWindow;
 import org.joml.Vector3f;
@@ -16,32 +14,83 @@ import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Standalone implements RenderingImpl {
+public class Standalone {
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float MOVEMENT_SPEED = 10.0f / 1000000000f;
     private final Map<Entity, Integer> maxFrameMap = new HashMap<>();
-    private static RKS RKS;
+    private final RKS rks;
     private float angleInc;
+    private final List<ModelData> models = new ArrayList<>();
     private Entity rayquaza;
     private Entity jit;
     private Light directionalLight;
     private float lightAngle = 90.1f;
     private boolean loadedJitModel = false;
-    private Render renderer;
-    private Scene scene;
-    private final List<ModelData> models = new ArrayList<>();
 
     public static void main(String[] args) {
         System.loadLibrary("renderdoc");
-        Standalone.RKS = new RKS(new Standalone(), new DebugWindow("RKS Standalone Test", new GuiPassRenderer.KeyCallback(), new GuiPassRenderer.CharCallBack()));
-        RKS.start();
+        new Standalone();
     }
 
-    @Override
-    public void close() {
+    public Standalone() {
+        this.rks = new RKS(new DebugWindow("RKS Standalone Test"));
+
+        var id = "rayquaza";
+        var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
+        this.rayquaza = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
+        maxFrameMap.put(rayquaza, data.getAnimationsList().get(0).frames().size());
+        rayquaza.getRotation().rotateY((float) Math.toRadians(-90.0f));
+        rayquaza.setScale(1);
+        rayquaza.updateModelMatrix();
+        rayquaza.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
+
+        rks.scene.addEntity(rayquaza);
+        models.add(data);
+        rks.renderer.loadModels(models);
+
+        var camera = rks.scene.getCamera();
+        camera.setPosition(-6.0f, 2.0f, 0.0f);
+        camera.setRotation((float) Math.toRadians(20.0f), (float) Math.toRadians(90.f));
+
+        rks.scene.getAmbientLight().set(0.2f, 0.2f, 0.2f, 1.0f);
+        var lights = new ArrayList<>(List.of(this.directionalLight = new Light()));
+        directionalLight.getColor().set(1.0f, 1.0f, 1.0f, 1.0f);
+        lights.add(directionalLight);
+        updateDirectionalLight();
+
+        var lightArr = new Light[lights.size()];
+        lightArr = lights.toArray(lightArr);
+        rks.scene.setLights(lightArr);
+
+        // Main Loop
+        var settings = Settings.getInstance();
+        var initialTime = System.nanoTime();
+        var timeU = 1000000000d / settings.getUps();
+        double deltaU = 0;
+
+        var updateTime = initialTime;
+        while (!rks.window.shouldClose()) {
+
+            rks.scene.getCamera().setHasMoved(false);
+            rks.window.pollEvents();
+
+            var currentTime = System.nanoTime();
+            deltaU += (currentTime - initialTime) / timeU;
+            initialTime = currentTime;
+
+            if (deltaU >= 1) {
+                var diffTimeNanos = currentTime - updateTime;
+                handleInput(rks.window, rks.scene, diffTimeNanos, false);
+                updateTime = currentTime;
+                deltaU--;
+            }
+
+            rks.renderer.render(rks.window, rks.scene);
+        }
+
+        rks.close();
     }
 
-    @Override
     public void handleInput(Window window, Scene scene, long diffTimeMillis, boolean inputConsumed) {
         if (inputConsumed) return;
         var move = diffTimeMillis * MOVEMENT_SPEED;
@@ -102,44 +151,12 @@ public class Standalone implements RenderingImpl {
         jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
         jit.updateModelMatrix();
         jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
-        scene.addEntity(jit);
+        rks.scene.addEntity(jit);
         maxFrameMap.put(jit, data.getAnimationsList().get(0).frames().size());
 
-        renderer.entitiesLoadedTimeStamp = 0;
+        rks.renderer.entitiesLoadedTimeStamp = 0;
         this.loadedJitModel = true;
-        renderer.loadModels(models);
-    }
-
-    @Override
-    public void init(Scene scene, Render renderer) {
-        this.renderer = renderer;
-        this.scene = scene;
-        var id = "rayquaza";
-        var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
-        this.rayquaza = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
-        maxFrameMap.put(rayquaza, data.getAnimationsList().get(0).frames().size());
-        rayquaza.getRotation().rotateY((float) Math.toRadians(-90.0f));
-        rayquaza.setScale(1);
-        rayquaza.updateModelMatrix();
-        rayquaza.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
-        scene.addEntity(rayquaza);
-        this.models.add(data);
-
-        renderer.loadModels(models);
-
-        var camera = scene.getCamera();
-        camera.setPosition(-6.0f, 2.0f, 0.0f);
-        camera.setRotation((float) Math.toRadians(20.0f), (float) Math.toRadians(90.f));
-
-        scene.getAmbientLight().set(0.2f, 0.2f, 0.2f, 1.0f);
-        var lights = new ArrayList<>(List.of(this.directionalLight = new Light()));
-        directionalLight.getColor().set(1.0f, 1.0f, 1.0f, 1.0f);
-        lights.add(directionalLight);
-        updateDirectionalLight();
-
-        var lightArr = new Light[lights.size()];
-        lightArr = lights.toArray(lightArr);
-        scene.setLights(lightArr);
+        rks.renderer.loadModels(models);
     }
 
     private void updateDirectionalLight() {

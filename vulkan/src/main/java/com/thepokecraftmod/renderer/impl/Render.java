@@ -5,10 +5,9 @@ import org.tinylog.Logger;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.impl.animation.GpuAnimator;
-import com.thepokecraftmod.renderer.impl.geometry.GeometryPassRenderer;
-import com.thepokecraftmod.renderer.impl.gui.GuiPassRenderer;
-import com.thepokecraftmod.renderer.impl.lighting.LightPassRenderer;
-import com.thepokecraftmod.renderer.impl.shadows.ShadowRenderActivity;
+import com.thepokecraftmod.renderer.impl.geometry.GeometryPass;
+import com.thepokecraftmod.renderer.impl.lighting.LightPass;
+import com.thepokecraftmod.renderer.impl.shadows.ShadowPass;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.vk.*;
@@ -21,19 +20,19 @@ import static org.lwjgl.vulkan.VK11.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BI
 
 public class Render {
 
-    private GpuAnimator gpuAnimator;
+    private final GpuAnimator computeAnimator;
+    private final GeometryPass geometryPass;
+    private final LightPass lightPass;
+    private final ShadowPass shadowPass;
     private final CommandPool commandPool;
+
     private final Device device;
-    private final GeometryPassRenderer geometryPassRenderer;
     private final GlobalBuffers globalBuffers;
     private final Queue.GraphicsQueue graphQueue;
-    private final GuiPassRenderer guiPassRenderer;
     private final Instance instance;
-    private final LightPassRenderer lightPassRenderer;
     private final PhysicalDevice physicalDevice;
     private final PipelineCache pipelineCache;
     private final Queue.PresentQueue presentQueue;
-    private final ShadowRenderActivity shadowRenderActivity;
     private final Surface surface;
     private final TextureCache textureCache;
     private final List<VulkanModel> vulkanModels;
@@ -56,13 +55,12 @@ public class Render {
         this.vulkanModels = new ArrayList<>();
         this.textureCache = new TextureCache();
         this.globalBuffers = new GlobalBuffers(this.device);
-        this.geometryPassRenderer = new GeometryPassRenderer(this.swapChain, this.pipelineCache, scene, this.globalBuffers);
-        this.shadowRenderActivity = new ShadowRenderActivity(this.swapChain, this.pipelineCache, scene);
-        var attachments = new ArrayList<>(this.geometryPassRenderer.getAttachments());
-        attachments.add(this.shadowRenderActivity.getDepthAttachment());
-        this.lightPassRenderer = new LightPassRenderer(this.swapChain, this.commandPool, this.pipelineCache, attachments, scene);
-        this.gpuAnimator = new GpuAnimator(this.commandPool, this.pipelineCache);
-        this.guiPassRenderer = new GuiPassRenderer(this.swapChain, this.commandPool, this.graphQueue, this.pipelineCache, this.lightPassRenderer.getLightingFrameBuffer().getLightingRenderPass().getVkRenderPass());
+        this.geometryPass = new GeometryPass(this.swapChain, this.pipelineCache, scene, this.globalBuffers);
+        this.shadowPass = new ShadowPass(this.swapChain, this.pipelineCache, scene);
+        var attachments = new ArrayList<>(this.geometryPass.getAttachments());
+        attachments.add(this.shadowPass.getDepthAttachment());
+        this.lightPass = new LightPass(this.swapChain, this.commandPool, this.pipelineCache, attachments, scene);
+        this.computeAnimator = new GpuAnimator(this.commandPool, this.pipelineCache);
         this.entitiesLoadedTimeStamp = 0;
         createCommandBuffers();
     }
@@ -85,11 +83,10 @@ public class Render {
         this.device.waitIdle();
         this.textureCache.close();
         this.pipelineCache.close();
-        this.guiPassRenderer.close();
-        this.lightPassRenderer.close();
-        this.gpuAnimator.close();
-        this.shadowRenderActivity.close();
-        this.geometryPassRenderer.close();
+        this.lightPass.close();
+        this.computeAnimator.close();
+        this.shadowPass.close();
+        this.geometryPass.close();
         Arrays.stream(this.commandBuffers).forEach(CommandBuffer::close);
         Arrays.stream(this.fences).forEach(Fence::close);
         this.commandPool.close();
@@ -117,7 +114,7 @@ public class Render {
         this.vulkanModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.commandPool, this.graphQueue));
         Logger.debug("Loaded {} model(s)", models.size());
 
-        this.geometryPassRenderer.loadModels(this.textureCache);
+        this.geometryPass.loadModels(this.textureCache);
     }
 
     private void recordCommands() {
@@ -125,8 +122,8 @@ public class Render {
         for (var commandBuffer : this.commandBuffers) {
             commandBuffer.reset();
             commandBuffer.beginRecording();
-            this.geometryPassRenderer.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
-            this.shadowRenderActivity.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
+            this.geometryPass.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
+            this.shadowPass.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
             commandBuffer.endRecording();
             idx++;
         }
@@ -137,7 +134,7 @@ public class Render {
             this.entitiesLoadedTimeStamp = scene.getEntitiesLoadedTimeStamp();
             this.device.waitIdle();
             this.globalBuffers.loadEntities(this.vulkanModels, scene, this.commandPool, this.graphQueue, this.swapChain.getNumImages());
-            this.gpuAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
+            this.computeAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
             recordCommands();
         }
         if (window.getWidth() <= 0 && window.getHeight() <= 0) return;
@@ -150,19 +147,18 @@ public class Render {
 
         this.globalBuffers.loadInstanceData(scene, this.vulkanModels, this.swapChain.getCurrentFrame());
 
-        this.gpuAnimator.recordCommandBuffer(this.globalBuffers);
-        this.gpuAnimator.submit();
+        this.computeAnimator.recordCommandBuffer(this.globalBuffers);
+        this.computeAnimator.submit();
 
         var commandBuffer = acquireCurrentCommandBuffer();
-        this.geometryPassRenderer.render();
-        this.shadowRenderActivity.render();
+        this.geometryPass.render();
+        this.shadowPass.render();
         submitSceneCommand(this.graphQueue, commandBuffer);
 
-        commandBuffer = this.lightPassRenderer.beginRecording(this.shadowRenderActivity.getShadowCascades());
-        this.lightPassRenderer.recordCommandBuffer(commandBuffer);
-        this.guiPassRenderer.recordCommandBuffer(scene, commandBuffer);
-        this.lightPassRenderer.endRecording(commandBuffer);
-        this.lightPassRenderer.submit(this.graphQueue);
+        commandBuffer = this.lightPass.beginRecording(this.shadowPass.getShadowCascades());
+        this.lightPass.recordCommandBuffer(commandBuffer);
+        this.lightPass.endRecording(commandBuffer);
+        this.lightPass.submit(this.graphQueue);
 
         if (this.swapChain.presentImage(this.graphQueue)) window.setResized(true);
     }
@@ -174,13 +170,12 @@ public class Render {
 
         this.swapChain.close();
         this.swapChain = new SwapChain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());
-        this.geometryPassRenderer.resize(this.swapChain);
-        this.shadowRenderActivity.resize(this.swapChain);
+        this.geometryPass.resize(this.swapChain);
+        this.shadowPass.resize(this.swapChain);
         recordCommands();
-        var attachments = new ArrayList<>(this.geometryPassRenderer.getAttachments());
-        attachments.add(this.shadowRenderActivity.getDepthAttachment());
-        this.lightPassRenderer.resize(this.swapChain, attachments);
-        this.guiPassRenderer.resize(this.swapChain);
+        var attachments = new ArrayList<>(this.geometryPass.getAttachments());
+        attachments.add(this.shadowPass.getDepthAttachment());
+        this.lightPass.resize(this.swapChain, attachments);
     }
 
     public void submitSceneCommand(Queue queue, CommandBuffer commandBuffer) {
