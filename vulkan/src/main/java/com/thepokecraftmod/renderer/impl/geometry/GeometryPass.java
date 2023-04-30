@@ -139,7 +139,7 @@ public class GeometryPass implements Closeable {
         this.device.waitIdle();
         // Size of the descriptor is set up in the layout, we need to fill up the texture list
         // up to the number defined in the layout (reusing last texture)
-        var textureCacheList = textureCache.getAsList();
+        var textureCacheList = textureCache.getAll();
         var textureCacheSize = textureCacheList.size();
         var textureList = new ArrayList<>(textureCacheList);
         var settings = Settings.getInstance();

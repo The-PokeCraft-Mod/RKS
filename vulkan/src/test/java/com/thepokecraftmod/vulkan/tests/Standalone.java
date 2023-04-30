@@ -4,11 +4,18 @@ import com.thepokecraftmod.renderer.Rks;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.scene.*;
+import com.thepokecraftmod.rks.ModelLocator;
 import com.thepokecraftmod.rks.assimp.AssimpModelLoader;
+import com.thepokecraftmod.rks.model.Model;
+import com.thepokecraftmod.rks.model.animation.Animation;
+import com.thepokecraftmod.rks.model.config.animation.AnimationGroup;
+import com.thepokecraftmod.rks.model.texture.TextureType;
 import com.thepokecraftmod.vulkan.util.DebugWindow;
 import com.thepokecraftmod.vulkan.util.TestModelLocator;
 import org.joml.Vector3f;
+import org.lwjgl.vulkan.VK10;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +28,7 @@ public class Standalone {
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float MOVEMENT_SPEED = 8 / 1000000000f;
     private final Map<RksEntity, Integer> maxFrameMap = new HashMap<>();
+    private final Rks rks;
     private float angleInc;
     private final List<ModelData> models = new ArrayList<>();
     private RksEntity rayquaza;
@@ -34,17 +42,20 @@ public class Standalone {
     }
 
     public Standalone() {
-        var rks = new Rks(new DebugWindow("RKS Standalone Test"));
+        this.rks = new Rks(new DebugWindow("RKS Standalone Test"));
         var id = "rayquaza";
+        var locator = new TestModelLocator("testModels/rayquaza");
         var model = AssimpModelLoader.load(
                 "model.gltf",
-                new TestModelLocator("testModels/rayquaza"),
+                locator,
                 aiProcess_GenSmoothNormals
                         | aiProcess_FixInfacingNormals
                         | aiProcess_CalcTangentSpace
                         | aiProcess_LimitBoneWeights
         );
-        var data = ModelProcessor.loadModel(id, model, List.of());
+        loadTextures(locator, model);
+        var data = ModelProcessor.loadModel(id, locator, model, loadAnimations(locator, model));
+
 
         this.rayquaza = new RksEntity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
         maxFrameMap.put(rayquaza, data.getAnimations().get(0).frames().size());
@@ -98,6 +109,27 @@ public class Standalone {
         }
 
         rks.close();
+    }
+
+    private void loadTextures(TestModelLocator locator, Model model) {
+        for (var material : model.config().materials.values()) {
+            rks.renderer.textureCache.createTexture(rks.renderer.device, material.hashCode() + "-diffuse", locator.readImage(material.getTextures(TextureType.ALBEDO)), false, VK10.VK_FORMAT_R8G8B8A8_SRGB);
+            rks.renderer.textureCache.createTexture(rks.renderer.device, material.hashCode() + "-normal", locator.readImage(material.getTextures(TextureType.NORMALS)), false, VK10.VK_FORMAT_R8G8B8A8_SRGB);
+            rks.renderer.textureCache.createTexture(rks.renderer.device, material.hashCode() + "-roughnessMetallic", locator.readImage(material.getTextures(TextureType.ROUGHNESS)), false, VK10.VK_FORMAT_R8G8B8A8_SRGB);
+        }
+    }
+
+    private List<Animation> loadAnimations(ModelLocator locator, Model model) {
+        var animations = new ArrayList<Animation>();
+        var flyingAnims = model.config().animations.get(AnimationGroup.FLYING);
+        for (var entry : flyingAnims.entrySet()) {
+            var bytes = locator.getFile(entry.getValue().getMainAnimation());
+            var pAnimation = ByteBuffer.wrap(bytes);
+            var trAnimation = com.thepokecraftmod.rks.model.animation.tranm.Animation.getRootAsAnimation(pAnimation);
+            animations.add(new Animation(entry.getKey(), trAnimation, model.skeleton()));
+        }
+
+        return animations;
     }
 
     public void handleInput(Window window, Scene scene, long diffTimeMillis, boolean inputConsumed) {

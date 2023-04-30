@@ -6,9 +6,11 @@ import org.lwjgl.vulkan.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferFloat;
+import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
 
-import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.vulkan.VK11.*;
 
 public class Texture {
@@ -16,43 +18,60 @@ public class Texture {
     private final int height;
     private final int mipLevels;
     private final int width;
-    private String textureId;
-    private boolean hasTransparencies;
+    private final String textureId;
+    private boolean transparent;
     private Image image;
     private ImageView imageView;
     private boolean recordedTransition;
     private VulkanBuffer stgBuffer;
 
-    public Texture(Device device, String textureId, int imageFormat) {
+    public Texture(Device device, String textureId, BufferedImage cpuTexture, boolean transparent, int imageFormat) {
         LOGGER.info("Creating texture [{}]", textureId);
-        this.recordedTransition = false;
+        var imgBuffer = cpuTexture.getData().getDataBuffer();
+        var rgbaBuffer = (ByteBuffer) null;
+        this.width = cpuTexture.getWidth();
+        this.height = cpuTexture.getHeight();
+        this.mipLevels = (int) (log2(Math.min(width, height)) + 1);
+        this.transparent = transparent;
         this.textureId = textureId;
-        ByteBuffer buf = null;
-        try (var stack = MemoryStack.stackPush()) {
-            var w = stack.mallocInt(1);
-            var h = stack.mallocInt(1);
-            var channels = stack.mallocInt(1);
 
-            buf = stbi_load(textureId, w, h, channels, 4);
-            if (buf == null)
-                throw new RuntimeException("Image file [" + textureId + "] not loaded: " + stbi_failure_reason());
+        // Java API Issue
+        //noinspection ChainOfInstanceofChecks
+        if (imgBuffer instanceof DataBufferFloat intBuffer) {
+            var rawData = intBuffer.getData();
+            rgbaBuffer = MemoryUtil.memAlloc(rawData.length * 4);
 
-            setHasTransparencies(buf);
+            for (var hdrChannel : rawData) {
+                var pixel = hdrToRgb(hdrChannel);
+                rgbaBuffer.put((byte) ((pixel >> 16) & 0xFF));
+                rgbaBuffer.put((byte) ((pixel >> 8) & 0xFF));
+                rgbaBuffer.put((byte) (pixel & 0xFF));
+                rgbaBuffer.put((byte) ((pixel >> 24) & 0xFF));
+            }
 
-            this.width = w.get();
-            this.height = h.get();
-            this.mipLevels = (int) Math.floor(log2(Math.min(this.width, this.height))) + 1;
+            rgbaBuffer.flip();
+        } else if (imgBuffer instanceof DataBufferInt floatBuffer) {
+            var rawData = floatBuffer.getData();
+            rgbaBuffer = MemoryUtil.memAlloc(rawData.length * 4);
 
-            createTextureResources(device, buf, imageFormat);
-        } finally {
-            if (buf != null) stbi_image_free(buf);
-        }
+            for (var pixel : rawData) {
+                rgbaBuffer.put((byte) ((pixel >> 16) & 0xFF));
+                rgbaBuffer.put((byte) ((pixel >> 8) & 0xFF));
+                rgbaBuffer.put((byte) (pixel & 0xFF));
+                rgbaBuffer.put((byte) ((pixel >> 24) & 0xFF));
+            }
+
+            rgbaBuffer.flip();
+        } else throw new RuntimeException("Unknown Data Type: " + imgBuffer.getClass().getName());
+
+        createTextureResources(device, rgbaBuffer, imageFormat);
     }
 
     public Texture(Device device, ByteBuffer buf, int width, int height, int imageFormat) {
         this.width = width;
         this.height = height;
         this.mipLevels = 1;
+        this.textureId = null;
 
         createTextureResources(device, buf, imageFormat);
     }
@@ -102,7 +121,7 @@ public class Texture {
     }
 
     public boolean hasTransparencies() {
-        return this.hasTransparencies;
+        return this.transparent;
     }
 
     private double log2(int n) {
@@ -260,17 +279,7 @@ public class Texture {
         } else LOGGER.info("Texture [{}] has already been transitioned", this.textureId);
     }
 
-    private void setHasTransparencies(ByteBuffer buf) {
-        var numPixels = buf.capacity() / 4;
-        var offset = 0;
-        this.hasTransparencies = false;
-        for (var i = 0; i < numPixels; i++) {
-            var a = (0xFF & buf.get(offset + 3));
-            if (a < 255) {
-                this.hasTransparencies = true;
-                break;
-            }
-            offset += 4;
-        }
+    private static int hdrToRgb(float hdr) {
+        return (int) Math.min(Math.max(Math.pow(hdr, 1.0 / 2.2) * 255, 0), 255);
     }
 }

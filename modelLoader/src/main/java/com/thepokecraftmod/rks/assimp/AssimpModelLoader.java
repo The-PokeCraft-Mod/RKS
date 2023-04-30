@@ -1,6 +1,6 @@
 package com.thepokecraftmod.rks.assimp;
 
-import com.thepokecraftmod.rks.FileLocator;
+import com.thepokecraftmod.rks.ModelLocator;
 import com.thepokecraftmod.rks.model.Mesh;
 import com.thepokecraftmod.rks.model.Model;
 import com.thepokecraftmod.rks.model.animation.BoneNode;
@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 public class AssimpModelLoader {
 
-    public static Model load(String name, FileLocator locator, int extraFlags) {
+    public static Model load(String name, ModelLocator locator, int extraFlags) {
         var fileIo = AIFileIO.create()
                 .OpenProc((pFileIO, pFileName, openMode) -> {
                     var fileName = MemoryUtil.memUTF8(pFileName);
@@ -63,7 +63,7 @@ public class AssimpModelLoader {
         return result;
     }
 
-    private static Model readScene(AIScene scene, FileLocator locator) {
+    private static Model readScene(AIScene scene, ModelLocator locator) {
         var skeleton = new Skeleton(BoneNode.create(scene.mRootNode()));
         var config = readConfig(locator);
         var materials = readMaterialData(scene);
@@ -71,7 +71,7 @@ public class AssimpModelLoader {
         return new Model(materials, meshes, skeleton, config);
     }
 
-    private static ModelConfig readConfig(FileLocator locator) {
+    private static ModelConfig readConfig(ModelLocator locator) {
         var json = new String(locator.getFile("model.config.json"));
         return ModelConfig.GSON.fromJson(json, ModelConfig.class);
     }

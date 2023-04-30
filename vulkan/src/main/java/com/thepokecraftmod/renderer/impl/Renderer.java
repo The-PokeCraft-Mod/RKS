@@ -1,6 +1,5 @@
 package com.thepokecraftmod.renderer.impl;
 
-import org.lwjgl.system.MemoryStack;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.impl.animation.GpuAnimator;
@@ -10,6 +9,7 @@ import com.thepokecraftmod.renderer.impl.shadows.ShadowPass;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.vk.*;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,20 +27,20 @@ public class Renderer {
     private final ShadowPass shadowPass;
     private final CmdPool cmdPool;
 
-    private final Device device;
-    private final GlobalBuffers globalBuffers;
-    private final Queue.GraphicsQueue graphQueue;
-    private final Instance instance;
-    private final PhysicalDevice physicalDevice;
-    private final PipelineCache pipelineCache;
-    private final Queue.PresentQueue presentQueue;
-    private final Surface surface;
-    private final TextureCache textureCache;
-    private final List<GpuModel> gpuModels;
-    private CmdBuffer[] cmdBuffers;
+    public final Device device;
+    public final GlobalBuffers globalBuffers;
+    public final Queue.GraphicsQueue graphQueue;
+    public final Instance instance;
+    public final PhysicalDevice physicalDevice;
+    public final PipelineCache pipelineCache;
+    public final Queue.PresentQueue presentQueue;
+    public final Surface surface;
+    public final TextureCache textureCache;
+    public final List<GpuModel> gpuModels;
+    public CmdBuffer[] cmdBuffers;
     public long entitiesLoadedTimeStamp;
-    private Fence[] fences;
-    private Swapchain swapChain;
+    public Fence[] fences;
+    public Swapchain swapChain;
 
     public Renderer(Window window, Scene scene) {
         var engProps = Settings.getInstance();

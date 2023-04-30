@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.scene;
 
+import com.thepokecraftmod.rks.ModelLocator;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
@@ -9,13 +10,15 @@ public class ModelData {
     private final List<Material> materialList;
     private final List<MeshData> meshDataList;
     private final String modelId;
+    public final ModelLocator locator;
     private List<AnimMeshData> animMeshDataList;
     private List<PreComputedAnimation> animationsList;
 
-    public ModelData(String modelId, List<MeshData> meshDataList, List<Material> materialList) {
+    public ModelData(String modelId, List<MeshData> meshDataList, List<Material> materialList, ModelLocator locator) {
         this.modelId = modelId;
         this.meshDataList = meshDataList;
         this.materialList = materialList;
+        this.locator = locator;
     }
 
     public List<AnimMeshData> getAnimMeshDataList() {

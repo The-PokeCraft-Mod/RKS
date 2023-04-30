@@ -1,19 +1,19 @@
 package com.thepokecraftmod.rks;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 /**
  * Method to find and locate files based on the name of the file.
  */
-@FunctionalInterface
-public interface FileLocator {
+public interface ModelLocator {
 
     byte[] getFile(String name);
+
+    BufferedImage readImage(List<String> layers);
 
     /**
      * Expects a Native Byte Buffer
      */
-    default BufferedImage readImage(String name) {
-        return null;
-    }
+    BufferedImage readImage(String name);
 }

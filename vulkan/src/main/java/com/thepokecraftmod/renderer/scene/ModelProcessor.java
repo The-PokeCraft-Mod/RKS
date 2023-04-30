@@ -1,15 +1,21 @@
 package com.thepokecraftmod.renderer.scene;
 
 import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.rks.ModelLocator;
 import com.thepokecraftmod.rks.Pair;
 import com.thepokecraftmod.rks.model.Mesh;
 import com.thepokecraftmod.rks.model.Model;
 import com.thepokecraftmod.rks.model.animation.Animation;
 import com.thepokecraftmod.rks.model.material.Material;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.thepokecraftmod.renderer.EngineUtils.listFloatToArray;
@@ -23,7 +29,7 @@ public class ModelProcessor {
     public static final int MAX_JOINTS = 200;
     public static final int MAX_WEIGHTS = 4;
 
-    public static ModelData loadModel(String modelId, Model model, List<Animation> animations) {
+    public static ModelData loadModel(String modelId, ModelLocator locator, Model model, List<Animation> animations) {
         LOGGER.info("Loading model \"{}\"", modelId);
 
         // Material Loading
@@ -31,8 +37,10 @@ public class ModelProcessor {
         var materialArray = new Material[model.materialReferences().length];
         for (var i = 0; i < model.materialReferences().length; i++) {
             materialArray[i] = model.config().materials.get(model.materialReferences()[i]);
-            var material = processMaterial(materialArray[i]);
-            materials.add(material);
+            if (materialArray[i] != null) {
+                var material = processMaterial(materialArray[i]);
+                materials.add(material);
+            }
         }
 
 
@@ -42,7 +50,7 @@ public class ModelProcessor {
             meshDataList.add(meshData);
         }
 
-        var modelData = new ModelData(modelId, meshDataList, materials);
+        var modelData = new ModelData(modelId, meshDataList, materials, locator);
 
         if (animations.size() > 0) {
             LOGGER.info("Processing animations");
@@ -64,8 +72,10 @@ public class ModelProcessor {
         var processedAnimations = new ArrayList<ModelData.PreComputedAnimation>();
         var ups = Settings.getInstance().getUpdatesPerSecond();
         for (var animation : animations) {
-            var framesNeeded = ups * animation.animationDuration;
-            System.out.println("ok");
+            var framesNeeded = (ups / animation.ticksPerSecond) * animation.animationDuration;
+            var frames = new ArrayList<Matrix4f[]>();
+            for (var i = 0; i < framesNeeded; i++) frames.add(animation.getFrameTransform(i));
+            processedAnimations.add(new ModelData.PreComputedAnimation(animation.name, animation.animationDuration, frames));
         }
 
         return processedAnimations;
@@ -76,14 +86,12 @@ public class ModelProcessor {
         var boneIds = new ArrayList<Integer>();
         var weights = new ArrayList<Float>();
 
-        for (var bone : mesh.bones()) {
-            if (bone.weights.length > MAX_WEIGHTS) throw new RuntimeException("Too many weights");
+        for (var bone : mesh.bones())
             for (var i = 0; i < bone.weights.length; i++) {
                 var weight = bone.weights[i];
                 var map = vertBoneWeights.computeIfAbsent(weight.vertexId, integer -> new ArrayList<>());
                 map.add(new Pair<>(model.skeleton().getId(bone), weight.weight));
             }
-        }
 
         var vertexCount = mesh.positions().size();
         for (var i = 0; i < vertexCount; i++) {
@@ -106,7 +114,12 @@ public class ModelProcessor {
 
     private static ModelData.Material processMaterial(Material material) {
         return new ModelData.Material(
-
+                material.hashCode() + "-diffuse",
+                material.hashCode() + "-normal",
+                material.hashCode() + "-roughnessMetallic",
+                new Vector4f(1, 1, 1, 1),
+                1,
+                1
         );
     }
 

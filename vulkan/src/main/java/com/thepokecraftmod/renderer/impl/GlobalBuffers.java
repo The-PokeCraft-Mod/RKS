@@ -244,20 +244,20 @@ public class GlobalBuffers {
         instanceBuffer.unMap();
     }
 
-    private List<GpuModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StagingBuffer materialsStagingBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
+    private List<GpuModel.VulkanMaterial> loadMaterials(TextureCache textureCache, StagingBuffer materialsStagingBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
         var vulkanMaterialList = new ArrayList<GpuModel.VulkanMaterial>();
         for (var material : materialList) {
             var dataBuffer = materialsStagingBuffer.mappedMem();
 
-            var texture = textureCache.createTexture(device, material.diffuseTexture(), VK_FORMAT_R8G8B8A8_SRGB);
+            var texture = textureCache.getTexture(material.diffuseTexture());
             if (texture != null) textureList.add(texture);
             var textureIdx = textureCache.getPosition(material.diffuseTexture());
 
-            texture = textureCache.createTexture(device, material.normalTexture(), VK_FORMAT_R8G8B8A8_UNORM);
+            texture = textureCache.getTexture(material.normalTexture());
             if (texture != null) textureList.add(texture);
             var normalMapIdx = textureCache.getPosition(material.normalTexture());
 
-            texture = textureCache.createTexture(device, material.metalRoughMap(), VK_FORMAT_R8G8B8A8_UNORM);
+            texture = textureCache.getTexture(material.metalRoughMap());
             if (texture != null) textureList.add(texture);
             var metalRoughMapIdx = textureCache.getPosition(material.metalRoughMap());
 
@@ -347,23 +347,18 @@ public class GlobalBuffers {
 
         // Load a default material
         var defaultMaterialList = Collections.singletonList(new ModelData.Material());
-        loadMaterials(device, textureCache, materialsStgBuffer, defaultMaterialList, textureList);
+        loadMaterials(textureCache, materialsStgBuffer, defaultMaterialList, textureList);
 
         for (var modelData : models) {
             var vulkanModel = new GpuModel(modelData.getModelId());
             gpuModelList.add(vulkanModel);
 
-            var vulkanMaterialList = loadMaterials(device, textureCache, materialsStgBuffer, modelData.getMaterialList(), textureList);
+            var vulkanMaterialList = loadMaterials(textureCache, materialsStgBuffer, modelData.getMaterialList(), textureList);
             loadMeshes(verticesStgBuffer, indicesStgBuffer, animWeightsStgBuffer, modelData, vulkanModel, vulkanMaterialList);
             loadAnimationData(modelData, vulkanModel, animJointMatricesStgBuffer);
         }
 
-        // We need to ensure that at least we have one texture
-        if (textureList.isEmpty()) {
-            var settings = Settings.getInstance();
-            var defaultTexture = textureCache.createTexture(device, settings.getDefaultTexturePath(), VK_FORMAT_R8G8B8A8_SRGB);
-            textureList.add(defaultTexture);
-        }
+        if (textureList.isEmpty()) throw new RuntimeException("Impossible Scenario. Not a single texture loaded");
 
         materialsStgBuffer.recordTransferCommand(cmd, this.materialsBuffer);
         verticesStgBuffer.recordTransferCommand(cmd, this.verticesBuffer);
