@@ -16,26 +16,26 @@ public class Texture {
     private final int height;
     private final int mipLevels;
     private final int width;
-    private String fileName;
+    private String textureId;
     private boolean hasTransparencies;
     private Image image;
     private ImageView imageView;
     private boolean recordedTransition;
     private VulkanBuffer stgBuffer;
 
-    public Texture(Device device, String fileName, int imageFormat) {
-        LOGGER.info("Creating texture [{}]", fileName);
+    public Texture(Device device, String textureId, int imageFormat) {
+        LOGGER.info("Creating texture [{}]", textureId);
         this.recordedTransition = false;
-        this.fileName = fileName;
+        this.textureId = textureId;
         ByteBuffer buf = null;
         try (var stack = MemoryStack.stackPush()) {
             var w = stack.mallocInt(1);
             var h = stack.mallocInt(1);
             var channels = stack.mallocInt(1);
 
-            buf = stbi_load(fileName, w, h, channels, 4);
+            buf = stbi_load(textureId, w, h, channels, 4);
             if (buf == null)
-                throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
+                throw new RuntimeException("Image file [" + textureId + "] not loaded: " + stbi_failure_reason());
 
             setHasTransparencies(buf);
 
@@ -93,8 +93,8 @@ public class Texture {
         this.imageView = new ImageView(device, this.image.getVkImage(), imageViewData);
     }
 
-    public String getFileName() {
-        return this.fileName;
+    public String getTextureId() {
+        return this.textureId;
     }
 
     public ImageView getImageView() {
@@ -250,14 +250,14 @@ public class Texture {
 
     public void recordTextureTransition(CmdBuffer cmd) {
         if (this.stgBuffer != null && !this.recordedTransition) {
-            LOGGER.info("Recording transition for texture [{}]", this.fileName);
+            LOGGER.info("Recording transition for texture [{}]", this.textureId);
             this.recordedTransition = true;
             try (var stack = MemoryStack.stackPush()) {
                 recordImageTransition(stack, cmd);
                 recordCopyBuffer(stack, cmd, this.stgBuffer);
                 recordGenerateMipMaps(stack, cmd);
             }
-        } else LOGGER.info("Texture [{}] has already been transitioned", this.fileName);
+        } else LOGGER.info("Texture [{}] has already been transitioned", this.textureId);
     }
 
     private void setHasTransparencies(ByteBuffer buf) {

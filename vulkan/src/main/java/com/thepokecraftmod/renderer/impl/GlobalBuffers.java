@@ -1,13 +1,13 @@
 package com.thepokecraftmod.renderer.impl;
 
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.VkBufferCopy;
-import org.lwjgl.vulkan.VkDrawIndexedIndirectCommand;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.vk.*;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.vulkan.VkBufferCopy;
+import org.lwjgl.vulkan.VkDrawIndexedIndirectCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +39,7 @@ public class GlobalBuffers {
     private VulkanBuffer[] instanceDataBuffers;
     private int numAnimIndirectCommands;
     private int numIndirectCommands;
-    private List<VulkanAnimEntity> vulkanAnimEntityList;
+    private List<AnimatedEntity> animatedEntityList;
 
     public GlobalBuffers(Device device) {
         LOGGER.info("Creating global buffers");
@@ -115,12 +115,12 @@ public class GlobalBuffers {
         return this.verticesBuffer;
     }
 
-    public List<VulkanAnimEntity> getAnimatedEntities() {
-        return this.vulkanAnimEntityList;
+    public List<AnimatedEntity> getAnimatedEntities() {
+        return this.animatedEntityList;
     }
 
-    private void loadAnimEntities(List<VulkanModel> vulkanModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
-        this.vulkanAnimEntityList = new ArrayList<>();
+    private void loadAnimEntities(List<GpuModel> gpuModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
+        this.animatedEntityList = new ArrayList<>();
         this.numAnimIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
             var device = cmdPool.getDevice();
@@ -129,14 +129,14 @@ public class GlobalBuffers {
             var bufferOffset = 0;
             var firstInstance = 0;
             var cmdList = new ArrayList<VkDrawIndexedIndirectCommand>();
-            for (var vulkanModel : vulkanModelList) {
+            for (var vulkanModel : gpuModelList) {
                 var entities = scene.getEntitiesByModelId(vulkanModel.getModelId());
                 if (entities.isEmpty()) continue;
                 for (var entity : entities) {
                     if (!entity.hasAnimation()) continue;
-                    var vulkanAnimEntity = new VulkanAnimEntity(entity, vulkanModel);
-                    this.vulkanAnimEntityList.add(vulkanAnimEntity);
-                    var vulkanAnimMeshList = vulkanAnimEntity.getAnimatedMeshes();
+                    var vulkanAnimEntity = new AnimatedEntity(entity, vulkanModel);
+                    this.animatedEntityList.add(vulkanAnimEntity);
+                    var vulkanAnimMeshList = vulkanAnimEntity.meshes;
                     for (var vulkanMesh : vulkanModel.getVulkanMeshList()) {
                         var cmd = VkDrawIndexedIndirectCommand.calloc(stack);
                         cmd.indexCount(vulkanMesh.numIndices());
@@ -146,7 +146,7 @@ public class GlobalBuffers {
                         cmd.firstInstance(firstInstance);
                         cmdList.add(cmd);
 
-                        vulkanAnimMeshList.add(new VulkanAnimEntity.VulkanAnimMesh(bufferOffset, vulkanMesh));
+                        vulkanAnimMeshList.add(new AnimatedEntity.VulkanAnimMesh(bufferOffset, vulkanMesh));
                         bufferOffset += vulkanMesh.verticesSize();
                         firstInstance++;
                     }
@@ -172,7 +172,8 @@ public class GlobalBuffers {
 
                 cmdList.forEach(indCommandBuffer::put);
 
-                if (this.animInstanceDataBuffers != null) Arrays.stream(this.animInstanceDataBuffers).forEach(VulkanBuffer::close);
+                if (this.animInstanceDataBuffers != null)
+                    Arrays.stream(this.animInstanceDataBuffers).forEach(VulkanBuffer::close);
                 this.animInstanceDataBuffers = new VulkanBuffer[numSwapChainImages];
                 for (var i = 0; i < numSwapChainImages; i++)
                     this.animInstanceDataBuffers[i] = new VulkanBuffer(device,
@@ -188,17 +189,17 @@ public class GlobalBuffers {
         }
     }
 
-    private void loadAnimationData(ModelData modelData, VulkanModel vulkanModel, StagingBuffer animJointMatricesStagingBuffer) {
-        var animationsList = modelData.getAnimationsList();
+    private void loadAnimationData(ModelData modelData, GpuModel gpuModel, StagingBuffer animJointMatricesStagingBuffer) {
+        var animationsList = modelData.getAnimations();
         if (!modelData.hasAnimations()) return;
         var dataBuffer = animJointMatricesStagingBuffer.mappedMem();
+
         for (var animation : animationsList) {
-            var vulkanAnimationData = new VulkanModel.VulkanAnimationData();
-            vulkanModel.addVulkanAnimationData(vulkanAnimationData);
+            var animationData = new GpuModel.GpuAnimationData();
+            gpuModel.addVulkanAnimationData(animationData);
             var frameList = animation.frames();
-            for (var frame : frameList) {
-                vulkanAnimationData.addVulkanAnimationFrame(new VulkanModel.VulkanAnimationFrame(dataBuffer.position()));
-                var matrices = frame.jointMatrices();
+            for (var matrices : frameList) {
+                animationData.addFrame(new GpuModel.GpuAnimationFrame(dataBuffer.position()));
                 for (var matrix : matrices) {
                     matrix.get(dataBuffer);
                     dataBuffer.position(dataBuffer.position() + VkConstants.MAT4X4_SIZE);
@@ -207,30 +208,29 @@ public class GlobalBuffers {
         }
     }
 
-    public void loadEntities(List<VulkanModel> vulkanModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
-        loadStaticEntities(vulkanModelList, scene, cmdPool, queue, numSwapChainImages);
-        loadAnimEntities(vulkanModelList, scene, cmdPool, queue, numSwapChainImages);
+    public void loadEntities(List<GpuModel> gpuModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
+        loadStaticEntities(gpuModelList, scene, cmdPool, queue, numSwapChainImages);
+        loadAnimEntities(gpuModelList, scene, cmdPool, queue, numSwapChainImages);
     }
 
-    public void loadInstanceData(Scene scene, List<VulkanModel> vulkanModels, int currentSwapChainIdx) {
+    public void loadInstanceData(Scene scene, List<GpuModel> gpuModels, int currentSwapChainIdx) {
         if (this.instanceDataBuffers != null) {
-            Predicate<VulkanModel> excludeAnimatedEntitiesPredicate = VulkanModel::hasAnimations;
-            loadInstanceData(scene, vulkanModels, this.instanceDataBuffers[currentSwapChainIdx], excludeAnimatedEntitiesPredicate);
+            Predicate<GpuModel> excludeAnimatedEntitiesPredicate = GpuModel::hasAnimations;
+            loadInstanceData(scene, gpuModels, this.instanceDataBuffers[currentSwapChainIdx], excludeAnimatedEntitiesPredicate);
         }
 
         if (this.animInstanceDataBuffers != null) {
-            Predicate<VulkanModel> excludedStaticEntitiesPredicate = v -> !v.hasAnimations();
-            loadInstanceData(scene, vulkanModels, this.animInstanceDataBuffers[currentSwapChainIdx], excludedStaticEntitiesPredicate);
+            Predicate<GpuModel> excludedStaticEntitiesPredicate = v -> !v.hasAnimations();
+            loadInstanceData(scene, gpuModels, this.animInstanceDataBuffers[currentSwapChainIdx], excludedStaticEntitiesPredicate);
         }
     }
 
-    private void loadInstanceData(Scene scene, List<VulkanModel> vulkanModels, VulkanBuffer instanceBuffer,
-                                  Predicate<VulkanModel> excludedEntitiesPredicate) {
+    private void loadInstanceData(Scene scene, List<GpuModel> gpuModels, VulkanBuffer instanceBuffer, Predicate<GpuModel> excludedEntitiesPredicate) {
         if (instanceBuffer == null) return;
         var mappedMemory = instanceBuffer.map();
         var dataBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) instanceBuffer.getRequestedSize());
         var pos = 0;
-        for (var vulkanModel : vulkanModels) {
+        for (var vulkanModel : gpuModels) {
             var entities = scene.getEntitiesByModelId(vulkanModel.getModelId());
             if (entities.isEmpty() || excludedEntitiesPredicate.test(vulkanModel)) continue;
             for (var vulkanMesh : vulkanModel.getVulkanMeshList())
@@ -244,24 +244,24 @@ public class GlobalBuffers {
         instanceBuffer.unMap();
     }
 
-    private List<VulkanModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StagingBuffer materialsStagingBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
-        var vulkanMaterialList = new ArrayList<VulkanModel.VulkanMaterial>();
+    private List<GpuModel.VulkanMaterial> loadMaterials(Device device, TextureCache textureCache, StagingBuffer materialsStagingBuffer, List<ModelData.Material> materialList, List<Texture> textureList) {
+        var vulkanMaterialList = new ArrayList<GpuModel.VulkanMaterial>();
         for (var material : materialList) {
             var dataBuffer = materialsStagingBuffer.mappedMem();
 
-            var texture = textureCache.createTexture(device, material.texturePath(), VK_FORMAT_R8G8B8A8_SRGB);
+            var texture = textureCache.createTexture(device, material.diffuseTexture(), VK_FORMAT_R8G8B8A8_SRGB);
             if (texture != null) textureList.add(texture);
-            var textureIdx = textureCache.getPosition(material.texturePath());
+            var textureIdx = textureCache.getPosition(material.diffuseTexture());
 
-            texture = textureCache.createTexture(device, material.normalMapPath(), VK_FORMAT_R8G8B8A8_UNORM);
+            texture = textureCache.createTexture(device, material.normalTexture(), VK_FORMAT_R8G8B8A8_UNORM);
             if (texture != null) textureList.add(texture);
-            var normalMapIdx = textureCache.getPosition(material.normalMapPath());
+            var normalMapIdx = textureCache.getPosition(material.normalTexture());
 
             texture = textureCache.createTexture(device, material.metalRoughMap(), VK_FORMAT_R8G8B8A8_UNORM);
             if (texture != null) textureList.add(texture);
             var metalRoughMapIdx = textureCache.getPosition(material.metalRoughMap());
 
-            vulkanMaterialList.add(new VulkanModel.VulkanMaterial(dataBuffer.position() / MATERIAL_SIZE));
+            vulkanMaterialList.add(new GpuModel.VulkanMaterial(dataBuffer.position() / MATERIAL_SIZE));
             material.diffuseColor().get(dataBuffer);
             dataBuffer.position(dataBuffer.position() + VkConstants.VEC4_SIZE);
             dataBuffer.putInt(textureIdx);
@@ -278,7 +278,7 @@ public class GlobalBuffers {
         return vulkanMaterialList;
     }
 
-    private void loadMeshes(StagingBuffer verticesStagingBuffer, StagingBuffer indicesStagingBuffer, StagingBuffer animWeightsStagingBuffer, ModelData modelData, VulkanModel vulkanModel, List<VulkanModel.VulkanMaterial> vulkanMaterialList) {
+    private void loadMeshes(StagingBuffer verticesStagingBuffer, StagingBuffer indicesStagingBuffer, StagingBuffer animWeightsStagingBuffer, ModelData modelData, GpuModel gpuModel, List<GpuModel.VulkanMaterial> vulkanMaterialList) {
         var verticesBuffer = verticesStagingBuffer.mappedMem();
         var indicesBuffer = indicesStagingBuffer.mappedMem();
         var weightsBuffer = animWeightsStagingBuffer.mappedMem();
@@ -301,7 +301,7 @@ public class GlobalBuffers {
             var globalMaterialIdx = 0;
             if (localMaterialIdx >= 0 && localMaterialIdx < vulkanMaterialList.size())
                 globalMaterialIdx = vulkanMaterialList.get(localMaterialIdx).globalMaterialIdx();
-            vulkanModel.addVulkanMesh(new VulkanModel.VulkanMesh(verticesSize, indices.length, verticesBuffer.position(), indicesBuffer.position(), globalMaterialIdx, weightsBuffer.position()));
+            gpuModel.addVulkanMesh(new GpuModel.VulkanMesh(verticesSize, indices.length, verticesBuffer.position(), indicesBuffer.position(), globalMaterialIdx, weightsBuffer.position()));
 
             var rows = positions.length / 3;
             for (var row = 0; row < rows; row++) {
@@ -330,8 +330,8 @@ public class GlobalBuffers {
         }
     }
 
-    public List<VulkanModel> loadModels(List<ModelData> models, TextureCache textureCache, CmdPool cmdPool, Queue queue) {
-        List<VulkanModel> vulkanModelList = new ArrayList<>();
+    public List<GpuModel> loadModels(List<ModelData> models, TextureCache textureCache, CmdPool cmdPool, Queue queue) {
+        List<GpuModel> gpuModelList = new ArrayList<>();
         List<Texture> textureList = new ArrayList<>();
 
         var device = cmdPool.getDevice();
@@ -350,8 +350,8 @@ public class GlobalBuffers {
         loadMaterials(device, textureCache, materialsStgBuffer, defaultMaterialList, textureList);
 
         for (var modelData : models) {
-            var vulkanModel = new VulkanModel(modelData.getModelId());
-            vulkanModelList.add(vulkanModel);
+            var vulkanModel = new GpuModel(modelData.getModelId());
+            gpuModelList.add(vulkanModel);
 
             var vulkanMaterialList = loadMaterials(device, textureCache, materialsStgBuffer, modelData.getMaterialList(), textureList);
             loadMeshes(verticesStgBuffer, indicesStgBuffer, animWeightsStgBuffer, modelData, vulkanModel, vulkanMaterialList);
@@ -383,10 +383,10 @@ public class GlobalBuffers {
         animWeightsStgBuffer.close();
         textureList.forEach(Texture::closeStaging);
 
-        return vulkanModelList;
+        return gpuModelList;
     }
 
-    private void loadStaticEntities(List<VulkanModel> vulkanModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
+    private void loadStaticEntities(List<GpuModel> gpuModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
         this.numIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
             var device = cmdPool.getDevice();
@@ -395,7 +395,7 @@ public class GlobalBuffers {
             List<VkDrawIndexedIndirectCommand> indexedIndirectCommandList = new ArrayList<>();
             var numInstances = 0;
             var firstInstance = 0;
-            for (var vulkanModel : vulkanModelList) {
+            for (var vulkanModel : gpuModelList) {
                 var entities = scene.getEntitiesByModelId(vulkanModel.getModelId());
                 if (entities.isEmpty() || vulkanModel.hasAnimations()) continue;
                 for (var vulkanMesh : vulkanModel.getVulkanMeshList()) {

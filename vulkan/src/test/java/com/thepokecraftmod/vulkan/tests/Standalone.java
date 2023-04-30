@@ -1,10 +1,12 @@
 package com.thepokecraftmod.vulkan.tests;
 
-import com.thepokecraftmod.renderer.RKS;
+import com.thepokecraftmod.renderer.Rks;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.scene.*;
+import com.thepokecraftmod.rks.assimp.AssimpModelLoader;
 import com.thepokecraftmod.vulkan.util.DebugWindow;
+import com.thepokecraftmod.vulkan.util.TestModelLocator;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -12,20 +14,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Standalone {
     private static final float MOUSE_SENSITIVITY = 0.2f;
-    private static final float MOVEMENT_SPEED = 10.0f / 1000000000f;
-    private final Map<Entity, Integer> maxFrameMap = new HashMap<>();
-    private final RKS rks;
+    private static final float MOVEMENT_SPEED = 8 / 1000000000f;
+    private final Map<RksEntity, Integer> maxFrameMap = new HashMap<>();
     private float angleInc;
     private final List<ModelData> models = new ArrayList<>();
-    private Entity rayquaza;
-    private Entity jit;
-    private Light directionalLight;
+    private RksEntity rayquaza;
+    private RksEntity jit;
+    private final Light directionalLight;
     private float lightAngle = 90.1f;
-    private boolean loadedJitModel = false;
 
     public static void main(String[] args) {
         System.loadLibrary("renderdoc");
@@ -33,16 +34,24 @@ public class Standalone {
     }
 
     public Standalone() {
-        this.rks = new RKS(new DebugWindow("RKS Standalone Test"));
-
+        var rks = new Rks(new DebugWindow("RKS Standalone Test"));
         var id = "rayquaza";
-        var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\rayquaza", true);
-        this.rayquaza = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
-        maxFrameMap.put(rayquaza, data.getAnimationsList().get(0).frames().size());
+        var model = AssimpModelLoader.load(
+                "model.gltf",
+                new TestModelLocator("testModels/rayquaza"),
+                aiProcess_GenSmoothNormals
+                        | aiProcess_FixInfacingNormals
+                        | aiProcess_CalcTangentSpace
+                        | aiProcess_LimitBoneWeights
+        );
+        var data = ModelProcessor.loadModel(id, model, List.of());
+
+        this.rayquaza = new RksEntity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
+        maxFrameMap.put(rayquaza, data.getAnimations().get(0).frames().size());
         rayquaza.getRotation().rotateY((float) Math.toRadians(-90.0f));
         rayquaza.setScale(1);
         rayquaza.updateModelMatrix();
-        rayquaza.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
+        rayquaza.setEntityAnimation(new RksEntity.AnimationInstance(true, 0, 0));
 
         rks.scene.addEntity(rayquaza);
         models.add(data);
@@ -65,7 +74,7 @@ public class Standalone {
         // Main Loop
         var settings = Settings.getInstance();
         var initialTime = System.nanoTime();
-        var timeU = 1000000000d / settings.getUps();
+        var timeU = 1000000000d / settings.getUpdatesPerSecond();
         double deltaU = 0;
 
         var updateTime = initialTime;
@@ -112,10 +121,8 @@ public class Standalone {
             scene.setLightChanged(false);
         }
 
-        if (window.isKeyPressed(GLFW_KEY_O)) if (!loadedJitModel) loadJitModel();
-
-        if (window.isKeyPressed(GLFW_KEY_SPACE))
-            this.rayquaza.getEntityAnimation().setStarted(!this.rayquaza.getEntityAnimation().isStarted());
+        // if (window.isKeyPressed(GLFW_KEY_O)) if (!loadedJitModel) loadJitModel();
+        if (window.isKeyPressed(GLFW_KEY_SPACE)) rayquaza.getAnimation().playing = !rayquaza.getAnimation().playing;
 
         var mouseInput = window.getMouseInput();
         if (mouseInput.isRightButtonPressed()) {
@@ -128,36 +135,34 @@ public class Standalone {
         else if (this.lightAngle > 180) this.lightAngle = 180;
         updateDirectionalLight();
 
-        var entityAnimation = this.rayquaza.getEntityAnimation();
-        if (entityAnimation != null && entityAnimation.isStarted()) {
-            var currentFrame = Math.floorMod(entityAnimation.getCurrentFrame() + 1, maxFrameMap.get(rayquaza));
-            entityAnimation.setCurrentFrame(currentFrame);
-        }
+        var entityAnimation = this.rayquaza.getAnimation();
+        if (entityAnimation != null && entityAnimation.playing)
+            entityAnimation.currentFrame = Math.floorMod(entityAnimation.currentFrame + 1, maxFrameMap.get(rayquaza));
 
-        if(jit != null) {
-            entityAnimation = this.jit.getEntityAnimation();
-            if (entityAnimation != null && entityAnimation.isStarted()) {
-                var currentFrame = Math.floorMod(entityAnimation.getCurrentFrame() + 1, maxFrameMap.computeIfAbsent(jit, entity -> 0));
-                entityAnimation.setCurrentFrame(currentFrame);
+        if (jit != null) {
+            entityAnimation = this.jit.getAnimation();
+            if (entityAnimation != null && entityAnimation.playing) {
+                var currentFrame = Math.floorMod(entityAnimation.currentFrame + 1, maxFrameMap.computeIfAbsent(jit, entity -> 0));
+                entityAnimation.currentFrame = currentFrame;
             }
         }
     }
 
-    private void loadJitModel() {
-        var id = "typhlosion";
-        var data = ModelLoader.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui", true);
-        models.add(data);
-        this.jit = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
-        jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
-        jit.updateModelMatrix();
-        jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
-        rks.scene.addEntity(jit);
-        maxFrameMap.put(jit, data.getAnimationsList().get(0).frames().size());
-
-        rks.renderer.entitiesLoadedTimeStamp = 0;
-        this.loadedJitModel = true;
-        rks.renderer.loadModels(models);
-    }
+//    private void loadJitModel() {
+//        var id = "typhlosion";
+//        var data = ModelProcessor.loadModel(id, "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui\\model.gltf", "D:\\Projects\\The-PokeCraft-Mod\\RKS\\vulkan\\src\\test\\resources\\models\\typhlosion_hisui", true);
+//        models.add(data);
+//        this.jit = new Entity(id, id, new Vector3f(0.0f, 0.0f, 0.0f));
+//        jit.getRotation().rotateY((float) Math.toRadians(-90.0f));
+//        jit.updateModelMatrix();
+//        jit.setEntityAnimation(new Entity.EntityAnimation(true, 0, 0));
+//        rks.scene.addEntity(jit);
+//        maxFrameMap.put(jit, data.getAnimationsList().get(0).frames().size());
+//
+//        rks.renderer.entitiesLoadedTimeStamp = 0;
+//        this.loadedJitModel = true;
+//        rks.renderer.loadModels(models);
+//    }
 
     private void updateDirectionalLight() {
         var zValue = (float) Math.cos(Math.toRadians(this.lightAngle));

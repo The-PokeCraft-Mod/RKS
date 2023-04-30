@@ -10,7 +10,7 @@ public class ModelData {
     private final List<MeshData> meshDataList;
     private final String modelId;
     private List<AnimMeshData> animMeshDataList;
-    private List<Animation> animationsList;
+    private List<PreComputedAnimation> animationsList;
 
     public ModelData(String modelId, List<MeshData> meshDataList, List<Material> materialList) {
         this.modelId = modelId;
@@ -26,11 +26,11 @@ public class ModelData {
         this.animMeshDataList = animMeshDataList;
     }
 
-    public List<Animation> getAnimationsList() {
+    public List<PreComputedAnimation> getAnimations() {
         return this.animationsList;
     }
 
-    public void setAnimationsList(List<Animation> animationsList) {
+    public void setAnimations(List<PreComputedAnimation> animationsList) {
         this.animationsList = animationsList;
     }
 
@@ -53,14 +53,20 @@ public class ModelData {
     public record AnimMeshData(float[] weights, int[] boneIds) {
     }
 
-    public record AnimatedFrame(Matrix4f[] jointMatrices) {
-    }
+    public record PreComputedAnimation(
+            String name,
+            double duration,
+            List<Matrix4f[]> frames
+    ) {}
 
-    public record Animation(String name, double duration, List<AnimatedFrame> frames) {
-    }
-
-    public record Material(String texturePath, String normalMapPath, String metalRoughMap, Vector4f diffuseColor,
-                           float roughnessFactor, float metallicFactor) {
+    public record Material(
+            String diffuseTexture, // AO + ALB
+            String normalTexture,
+            String metalRoughMap, // Metallic + Roughness
+            Vector4f diffuseColor,
+            float roughnessFactor,
+            float metallicFactor
+    ) {
         public static final Vector4f DEFAULT_COLOR = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
 
         public Material() {
@@ -68,8 +74,13 @@ public class ModelData {
         }
     }
 
-    public record MeshData(float[] positions, float[] normals, float[] tangents, float[] biTangents,
-                           float[] textCoords, int[] indices, int materialIdx) {
-
-    }
+    public record MeshData(
+            float[] positions,
+            float[] normals,
+            float[] tangents,
+            float[] biTangents,
+            float[] textCoords,
+            int[] indices,
+            int materialIdx
+    ) {}
 }

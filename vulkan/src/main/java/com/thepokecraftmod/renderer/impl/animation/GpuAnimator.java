@@ -116,15 +116,15 @@ public class GpuAnimator {
 
             var entities = globalBuffers.getAnimatedEntities();
             for (var animatedMesh : entities) {
-                var entity = animatedMesh.getEntity();
-                var entityAnimation = entity.getEntityAnimation();
-                if (!entityAnimation.isStarted()) continue;
-                var model = animatedMesh.getVulkanModel();
-                var animIdx = entity.getEntityAnimation().getAnimationIdx();
-                var currentFrame = entity.getEntityAnimation().getCurrentFrame();
+                var entity = animatedMesh.entity;
+                var entityAnimation = entity.getAnimation();
+                if (!entityAnimation.playing) continue;
+                var model = animatedMesh.model;
+                var animIdx = entity.getAnimation().animationIdx;
+                var currentFrame = entity.getAnimation().currentFrame;
                 var jointOffset = model.getAnimationData().get(animIdx).getFrameList().get(currentFrame).jointOffset();
 
-                for (var vulkanAnimMesh : animatedMesh.getAnimatedMeshes()) {
+                for (var vulkanAnimMesh : animatedMesh.meshes) {
                     var mesh = vulkanAnimMesh.vulkanMesh();
                     var groupSize = (int) Math.ceil((mesh.verticesSize() / (float) InstancedVertexBufferStructure.SIZE_IN_BYTES) / LOCAL_SIZE_X);
 

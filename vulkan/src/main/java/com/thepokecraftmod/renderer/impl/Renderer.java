@@ -36,7 +36,7 @@ public class Renderer {
     private final Queue.PresentQueue presentQueue;
     private final Surface surface;
     private final TextureCache textureCache;
-    private final List<VulkanModel> vulkanModels;
+    private final List<GpuModel> gpuModels;
     private CmdBuffer[] cmdBuffers;
     public long entitiesLoadedTimeStamp;
     private Fence[] fences;
@@ -53,7 +53,7 @@ public class Renderer {
         this.swapChain = new Swapchain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
         this.cmdPool = new CmdPool(this.device, this.graphQueue.getQueueFamilyIndex());
         this.pipelineCache = new PipelineCache(this.device);
-        this.vulkanModels = new ArrayList<>();
+        this.gpuModels = new ArrayList<>();
         this.textureCache = new TextureCache();
         this.globalBuffers = new GlobalBuffers(this.device);
         this.geometryPass = new GeometryPass(this.swapChain, this.pipelineCache, scene, this.globalBuffers);
@@ -112,7 +112,7 @@ public class Renderer {
 
     public void loadModels(List<ModelData> models) {
         LOGGER.info("Loading {} model(s)", models.size());
-        this.vulkanModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.cmdPool, this.graphQueue));
+        this.gpuModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.cmdPool, this.graphQueue));
         LOGGER.info("Loaded {} model(s)", models.size());
 
         this.geometryPass.loadModels(this.textureCache);
@@ -134,7 +134,7 @@ public class Renderer {
         if (this.entitiesLoadedTimeStamp < scene.getEntitiesLoadedTimeStamp()) {
             this.entitiesLoadedTimeStamp = scene.getEntitiesLoadedTimeStamp();
             this.device.waitIdle();
-            this.globalBuffers.loadEntities(this.vulkanModels, scene, this.cmdPool, this.graphQueue, this.swapChain.getNumImages());
+            this.globalBuffers.loadEntities(this.gpuModels, scene, this.cmdPool, this.graphQueue, this.swapChain.getNumImages());
             this.computeAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
             recordCommands();
         }
@@ -146,7 +146,7 @@ public class Renderer {
             this.swapChain.acquireNextImage();
         }
 
-        this.globalBuffers.loadInstanceData(scene, this.vulkanModels, this.swapChain.getCurrentFrame());
+        this.globalBuffers.loadInstanceData(scene, this.gpuModels, this.swapChain.getCurrentFrame());
 
         this.computeAnimator.recordCommandBuffer(this.globalBuffers);
         this.computeAnimator.submit();

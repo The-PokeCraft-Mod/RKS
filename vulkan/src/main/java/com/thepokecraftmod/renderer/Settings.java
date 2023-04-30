@@ -127,7 +127,7 @@ public class Settings {
         return this.shadowMapSize;
     }
 
-    public int getUps() {
+    public int getUpdatesPerSecond() {
         return this.ups;
     }
 

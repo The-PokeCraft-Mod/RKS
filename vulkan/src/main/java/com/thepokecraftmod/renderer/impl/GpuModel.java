@@ -3,21 +3,21 @@ package com.thepokecraftmod.renderer.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VulkanModel {
+public class GpuModel {
 
     private final String modelId;
-    private final List<VulkanAnimationData> vulkanAnimationDataList;
+    private final List<GpuAnimationData> gpuAnimationDataList;
     private final List<VulkanMesh> vulkanMeshList;
 
-    public VulkanModel(String modelId) {
+    public GpuModel(String modelId) {
         this.modelId = modelId;
         this.vulkanMeshList = new ArrayList<>();
-        this.vulkanAnimationDataList = new ArrayList<>();
+        this.gpuAnimationDataList = new ArrayList<>();
     }
 
-    public void addVulkanAnimationData(VulkanAnimationData vulkanAnimationData) {
-        this.vulkanAnimationDataList.add(vulkanAnimationData);
-    }
+    public void addVulkanAnimationData(GpuAnimationData gpuAnimationData) {
+        this.gpuAnimationDataList.add(gpuAnimationData);
+}
 
     public void addVulkanMesh(VulkanMesh vulkanMesh) {
         this.vulkanMeshList.add(vulkanMesh);
@@ -27,8 +27,8 @@ public class VulkanModel {
         return this.modelId;
     }
 
-    public List<VulkanAnimationData> getAnimationData() {
-        return this.vulkanAnimationDataList;
+    public List<GpuAnimationData> getAnimationData() {
+        return this.gpuAnimationDataList;
     }
 
     public List<VulkanMesh> getVulkanMeshList() {
@@ -36,27 +36,27 @@ public class VulkanModel {
     }
 
     public boolean hasAnimations() {
-        return !this.vulkanAnimationDataList.isEmpty();
+        return !this.gpuAnimationDataList.isEmpty();
     }
 
-    public static class VulkanAnimationData {
+    public static class GpuAnimationData {
 
-        private final List<VulkanAnimationFrame> frameList;
+        private final List<GpuAnimationFrame> frameList;
 
-        public VulkanAnimationData() {
+        public GpuAnimationData() {
             this.frameList = new ArrayList<>();
         }
 
-        public void addVulkanAnimationFrame(VulkanAnimationFrame vulkanAnimationFrame) {
-            this.frameList.add(vulkanAnimationFrame);
+        public void addFrame(GpuAnimationFrame gpuAnimationFrame) {
+            this.frameList.add(gpuAnimationFrame);
         }
 
-        public List<VulkanAnimationFrame> getFrameList() {
+        public List<GpuAnimationFrame> getFrameList() {
             return this.frameList;
         }
     }
 
-    public record VulkanAnimationFrame(int jointOffset) {}
+    public record GpuAnimationFrame(int jointOffset) {}
 
     public record VulkanMaterial(int globalMaterialIdx) {}
 

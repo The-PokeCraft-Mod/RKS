@@ -56,7 +56,7 @@ public class AssimpModelLoader {
                     aiFile.FileSizeProc().free();
                 });
 
-        var scene = Assimp.aiImportFileEx(name, Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | Assimp.aiProcess_ImproveCacheLocality | extraFlags, fileIo);
+        var scene = Assimp.aiImportFileEx(name, Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | extraFlags, fileIo);
         if (scene == null) throw new RuntimeException(Assimp.aiGetErrorString());
         var result = readScene(scene, locator);
         Assimp.aiReleaseImport(scene);
@@ -79,7 +79,7 @@ public class AssimpModelLoader {
     private static Mesh[] readMeshData(Skeleton skeleton, AIScene scene, Map<String, Bone> boneMap) {
         var meshes = new Mesh[scene.mNumMeshes()];
 
-        for (int i = 0; i < scene.mNumMeshes(); i++) {
+        for (var i = 0; i < scene.mNumMeshes(); i++) {
             var mesh = AIMesh.create(scene.mMeshes().get(i));
             var name = mesh.mName().dataString();
             var material = mesh.mMaterialIndex();
@@ -87,11 +87,13 @@ public class AssimpModelLoader {
             var positions = new ArrayList<Vector3f>();
             var uvs = new ArrayList<Vector2f>();
             var normals = new ArrayList<Vector3f>();
+            var tangents = new ArrayList<Vector3f>();
+            var biTangents = new ArrayList<Vector3f>();
             var bones = new ArrayList<Bone>();
 
             // Indices
             var aiFaces = mesh.mFaces();
-            for (int j = 0; j < mesh.mNumFaces(); j++) {
+            for (var j = 0; j < mesh.mNumFaces(); j++) {
                 var aiFace = aiFaces.get(j);
                 indices.add(aiFace.mIndices().get(0));
                 indices.add(aiFace.mIndices().get(1));
@@ -100,30 +102,36 @@ public class AssimpModelLoader {
 
             // Positions
             var aiVert = mesh.mVertices();
-            for (int j = 0; j < mesh.mNumVertices(); j++)
+            for (var j = 0; j < mesh.mNumVertices(); j++)
                 positions.add(new Vector3f(aiVert.get(j).x(), aiVert.get(j).y(), aiVert.get(j).z()));
 
             // UV's
             var aiUV = mesh.mTextureCoords(0);
-            if (aiUV != null) {
-                while (aiUV.remaining() > 0) {
-                    var uv = aiUV.get();
-                    uvs.add(new Vector2f(uv.x(), 1 - uv.y()));
-                }
+            if (aiUV != null) while (aiUV.remaining() > 0) {
+                var uv = aiUV.get();
+                uvs.add(new Vector2f(uv.x(), 1 - uv.y()));
             }
 
             // Normals
             var aiNormals = mesh.mNormals();
-            if (aiNormals != null) {
-                for (int j = 0; j < mesh.mNumVertices(); j++)
-                    normals.add(new Vector3f(aiNormals.get(j).x(), aiNormals.get(j).y(), aiNormals.get(j).z()));
-            }
+            if (aiNormals != null) for (var j = 0; j < mesh.mNumVertices(); j++)
+                normals.add(new Vector3f(aiNormals.get(j).x(), aiNormals.get(j).y(), aiNormals.get(j).z()));
+
+            // Tangents
+            var aiTangents = mesh.mTangents();
+            if (aiTangents != null) for (var j = 0; j < mesh.mNumVertices(); j++)
+                tangents.add(new Vector3f(aiTangents.get(j).x(), aiTangents.get(j).y(), aiTangents.get(j).z()));
+
+            // Bi-Tangents
+            var aiBiTangents = mesh.mBitangents();
+            if (aiBiTangents != null) for (var j = 0; j < mesh.mNumVertices(); j++)
+                biTangents.add(new Vector3f(aiBiTangents.get(j).x(), aiBiTangents.get(j).y(), aiBiTangents.get(j).z()));
 
             // Bones
             if (mesh.mBones() != null) {
                 var aiBones = requireNonNull(mesh.mBones());
 
-                for (int j = 0; j < aiBones.capacity(); j++) {
+                for (var j = 0; j < aiBones.capacity(); j++) {
                     var aiBone = AIBone.create(aiBones.get(j));
                     var bone = Bone.from(aiBone);
                     bones.add(bone);
@@ -132,7 +140,7 @@ public class AssimpModelLoader {
             }
 
             skeleton.store(bones.toArray(Bone[]::new));
-            meshes[i] = new Mesh(name, material, indices, positions, uvs, normals, bones);
+            meshes[i] = new Mesh(name, material, indices, positions, uvs, normals, tangents, biTangents, bones);
         }
 
         skeleton.calculateBoneData();
@@ -142,10 +150,10 @@ public class AssimpModelLoader {
     private static String[] readMaterialData(AIScene scene) {
         var materials = new String[scene.mNumMaterials()];
 
-        for (int i = 0; i < scene.mNumMaterials(); i++) {
+        for (var i = 0; i < scene.mNumMaterials(); i++) {
             var aiMat = AIMaterial.create(scene.mMaterials().get(i));
 
-            for (int j = 0; j < aiMat.mNumProperties(); j++) {
+            for (var j = 0; j < aiMat.mNumProperties(); j++) {
                 var property = AIMaterialProperty.create(aiMat.mProperties().get(j));
                 var name = property.mKey().dataString();
                 var data = property.mData();

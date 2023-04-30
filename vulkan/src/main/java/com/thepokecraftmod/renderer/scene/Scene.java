@@ -10,7 +10,7 @@ public class Scene {
 
     private final Vector4f ambientLight;
     private final Camera camera;
-    private final Map<String, List<Entity>> entitiesMap;
+    private final Map<String, List<RksEntity>> entitiesMap;
     private final Projection projection;
     private Light directionalLight;
     private long entitiesLoadedTimeStamp;
@@ -26,7 +26,7 @@ public class Scene {
         this.ambientLight = new Vector4f();
     }
 
-    public void addEntity(Entity entity) {
+    public void addEntity(RksEntity entity) {
         var entities = this.entitiesMap.computeIfAbsent(entity.getModelId(), k -> new ArrayList<>());
         entities.add(entity);
         this.entitiesLoadedTimeStamp = System.currentTimeMillis();
@@ -44,7 +44,7 @@ public class Scene {
         return this.directionalLight;
     }
 
-    public List<Entity> getEntitiesByModelId(String modelId) {
+    public List<RksEntity> getEntitiesByModelId(String modelId) {
         return this.entitiesMap.get(modelId);
     }
 
@@ -52,7 +52,7 @@ public class Scene {
         return this.entitiesLoadedTimeStamp;
     }
 
-    public Map<String, List<Entity>> getEntitiesMap() {
+    public Map<String, List<RksEntity>> getEntitiesMap() {
         return this.entitiesMap;
     }
 
@@ -97,7 +97,7 @@ public class Scene {
         this.entitiesLoadedTimeStamp = System.currentTimeMillis();
     }
 
-    public void removeEntity(Entity entity) {
+    public void removeEntity(RksEntity entity) {
         var entities = this.entitiesMap.get(entity.getModelId());
         if (entities != null) entities.removeIf(e -> e.getId().equals(entity.getId()));
         this.entitiesLoadedTimeStamp = System.currentTimeMillis();

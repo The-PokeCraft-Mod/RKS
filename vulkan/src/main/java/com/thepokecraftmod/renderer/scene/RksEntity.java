@@ -4,17 +4,17 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-public class Entity {
+public class RksEntity {
 
     private final String id;
     private final String modelId;
     private final Matrix4f modelMatrix;
     private final Vector3f position;
     private final Quaternionf rotation;
-    private EntityAnimation entityAnimation;
+    private AnimationInstance animationInstance;
     private float scale;
 
-    public Entity(String id, String modelId, Vector3f position) {
+    public RksEntity(String id, String modelId, Vector3f position) {
         this.id = id;
         this.modelId = modelId;
         this.position = position;
@@ -24,12 +24,12 @@ public class Entity {
         updateModelMatrix();
     }
 
-    public EntityAnimation getEntityAnimation() {
-        return this.entityAnimation;
+    public AnimationInstance getAnimation() {
+        return this.animationInstance;
     }
 
-    public void setEntityAnimation(EntityAnimation entityAnimation) {
-        this.entityAnimation = entityAnimation;
+    public void setEntityAnimation(AnimationInstance instance) {
+        this.animationInstance = instance;
     }
 
     public String getId() {
@@ -62,7 +62,7 @@ public class Entity {
     }
 
     public boolean hasAnimation() {
-        return this.entityAnimation != null;
+        return this.animationInstance != null;
     }
 
     public final void setPosition(float x, float y, float z) {
@@ -76,39 +76,15 @@ public class Entity {
         this.modelMatrix.translationRotateScale(this.position, this.rotation, this.scale);
     }
 
-    public static class EntityAnimation {
-        private int animationIdx;
-        private int currentFrame;
-        private boolean started;
+    public static class AnimationInstance {
+        public int animationIdx;
+        public int currentFrame;
+        public boolean playing;
 
-        public EntityAnimation(boolean started, int animationIdx, int currentFrame) {
-            this.started = started;
+        public AnimationInstance(boolean playing, int animationIdx, int currentFrame) {
+            this.playing = playing;
             this.animationIdx = animationIdx;
             this.currentFrame = currentFrame;
-        }
-
-        public int getAnimationIdx() {
-            return this.animationIdx;
-        }
-
-        public void setAnimationIdx(int animationIdx) {
-            this.animationIdx = animationIdx;
-        }
-
-        public int getCurrentFrame() {
-            return this.currentFrame;
-        }
-
-        public void setCurrentFrame(int currentFrame) {
-            this.currentFrame = currentFrame;
-        }
-
-        public boolean isStarted() {
-            return this.started;
-        }
-
-        public void setStarted(boolean started) {
-            this.started = started;
         }
     }
 }
