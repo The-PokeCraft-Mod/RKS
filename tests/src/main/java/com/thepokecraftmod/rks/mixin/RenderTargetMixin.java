@@ -48,7 +48,7 @@ public class RenderTargetMixin {
             InteropUtils.createGlTexture(
                     CreeperReplacementTest.getVkDevice(),
                     interopDepthTexture,
-                    GL30C.GL_DEPTH24_STENCIL8,
+                    GL30C.GL_DEPTH_COMPONENT16,
                     GL11C.GL_NEAREST,
                     GL11C.GL_NEAREST,
                     GL15C.GL_CLAMP_TO_EDGE,

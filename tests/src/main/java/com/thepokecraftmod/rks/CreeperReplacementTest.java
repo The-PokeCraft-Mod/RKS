@@ -25,7 +25,6 @@ import java.util.Map;
 
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.util.vma.Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 import static org.lwjgl.vulkan.KHRExternalMemory.VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRExternalMemoryCapabilities.VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRExternalMemoryFd.VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
@@ -60,8 +59,8 @@ public class CreeperReplacementTest {
                 .instanceExtension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)
                 .deviceExtension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
                 .deviceExtension(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)
-                .vmaFlags(VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT)
-                .enableFeature("bufferDeviceAddress");
+                .enableFeature("bufferDeviceAddress")
+                .enableSharedAllocator(true);
 
         // Windows Only
         if (true) instanceFactory

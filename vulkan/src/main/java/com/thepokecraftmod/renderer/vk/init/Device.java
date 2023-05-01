@@ -3,6 +3,7 @@ package com.thepokecraftmod.renderer.vk.init;
 import com.thepokecraftmod.renderer.vk.MemoryAllocator;
 import com.thepokecraftmod.renderer.vk.VkUtils;
 import com.thepokecraftmod.renderer.vk.VkWrapper;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -11,11 +12,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
+import static org.lwjgl.util.vma.Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 import static org.lwjgl.vulkan.VK11.*;
 
 public class Device implements VkWrapper<VkDevice> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);
     public final MemoryAllocator memoryAllocator;
+    public final MemoryAllocator sharedMemoryAllocator;
     private final PhysicalDevice physicalDevice;
     private final boolean samplerAnisotropy;
     private final VkDevice vkDevice;
@@ -87,7 +90,8 @@ public class Device implements VkWrapper<VkDevice> {
                     "Failed to create device");
             this.vkDevice = new VkDevice(pp.get(0), physicalDevice.vk(), deviceCreateInfo);
 
-            this.memoryAllocator = new MemoryAllocator(instance, physicalDevice, this.vkDevice, provider);
+            this.memoryAllocator = new MemoryAllocator(instance, physicalDevice, this.vkDevice, 0, false);
+            this.sharedMemoryAllocator = new MemoryAllocator(instance, physicalDevice, this.vkDevice, VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT, true);
         }
     }
 

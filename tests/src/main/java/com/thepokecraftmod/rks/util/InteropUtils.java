@@ -55,14 +55,14 @@ public class InteropUtils {
                             .width(width)
                             .height(height)
                             .properties(properties)
-                            .pNext(stack -> {
-                                var extra = VkExternalMemoryImageCreateInfo.calloc(stack)
-                                        .sType$Default()
-                                        .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT);
-
-                                return extra.address();
-                            })
+                            .pNext(stack -> VkExternalMemoryImageCreateInfo.calloc(stack)
+                                    .sType$Default()
+                                    .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT)
+                                    .address()
+                            )
+                            .allocator(device.sharedMemoryAllocator.vma())
             );
+
             this.mipLevels = mipLevels;
         }
 
@@ -161,7 +161,7 @@ public class InteropUtils {
 
     private static VmaAllocationInfo getBufferMemoryInfo(Device device, MemoryStack stack, long allocation) {
         var allocInfo = VmaAllocationInfo.calloc(stack);
-        Vma.vmaGetAllocationInfo(device.memoryAllocator.vma(), allocation, allocInfo);
+        Vma.vmaGetAllocationInfo(device.sharedMemoryAllocator.vma(), allocation, allocInfo);
         return allocInfo;
     }
 }

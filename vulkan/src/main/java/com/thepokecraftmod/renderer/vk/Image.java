@@ -21,10 +21,11 @@ public class Image {
     public final long allocation;
 
     public Image(Device device, ImageData imageData) {
-        this.device = device;
         try (var stack = MemoryStack.stackPush()) {
+            this.device = device;
             this.format = imageData.format;
             this.mipLevels = imageData.mipLevels;
+            var allocator = imageData.vmaAllocator == 0 ? device.memoryAllocator.vma() : imageData.vmaAllocator;
 
             var imageCreateInfo = VkImageCreateInfo.calloc(stack)
                     .sType$Default()
@@ -51,13 +52,9 @@ public class Image {
                     .requiredFlags(imageData.properties)
                     .usage(VMA_MEMORY_USAGE_AUTO);
 
-            Vma.vmaCreateImage(device.memoryAllocator.vma(), imageCreateInfo, createInfo, pImage, pAlloc, null);
-
-            ok(vkCreateImage(device.vk(), imageCreateInfo, null, pImage), "Failed to create image");
+            ok(Vma.vmaCreateImage(allocator, imageCreateInfo, createInfo, pImage, pAlloc, null), "Failed to create image");
             this.image = pImage.get(0);
             this.allocation = pAlloc.get(0);
-
-            Vma.vmaBindImageMemory(device.memoryAllocator.vma(), allocation, image);
         }
     }
 
@@ -92,6 +89,7 @@ public class Image {
         private int width;
         private int properties;
         private Function<MemoryStack, Long> pNext = stack -> 0L;
+        private long vmaAllocator;
 
         public ImageData() {
             this.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -137,6 +135,11 @@ public class Image {
 
         public ImageData properties(int properties) {
             this.properties = properties;
+            return this;
+        }
+
+        public ImageData allocator(long vmaAllocator) {
+            this.vmaAllocator = vmaAllocator;
             return this;
         }
 
