@@ -8,7 +8,7 @@
   "client": [
     "CreeperRendererMixin",
     "LevelRendererMixin",
-    "MainTargetMixin",
+    "RenderTargetMixin",
     "MinecraftMixin",
     "WindowMixin"
   ],

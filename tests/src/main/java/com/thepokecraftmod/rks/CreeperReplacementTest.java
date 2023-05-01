@@ -3,7 +3,9 @@ package com.thepokecraftmod.rks;
 import com.thepokecraftmod.renderer.Rks;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
+import com.thepokecraftmod.renderer.impl.Renderer;
 import com.thepokecraftmod.renderer.scene.*;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
 import com.thepokecraftmod.rks.assimp.AssimpModelLoader;
 import com.thepokecraftmod.rks.model.Model;
@@ -23,6 +25,7 @@ import java.util.Map;
 
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.util.vma.Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 import static org.lwjgl.vulkan.KHRExternalMemory.VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRExternalMemoryCapabilities.VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRExternalMemoryFd.VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
@@ -56,7 +59,9 @@ public class CreeperReplacementTest {
                 .instanceExtension(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)
                 .instanceExtension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)
                 .deviceExtension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
-                .deviceExtension(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+                .deviceExtension(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)
+                .vmaFlags(VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT)
+                .enableFeature("bufferDeviceAddress");
 
         // Windows Only
         if (true) instanceFactory
@@ -107,6 +112,14 @@ public class CreeperReplacementTest {
         var lightArr = new Light[lights.size()];
         lightArr = lights.toArray(lightArr);
         rks.scene.setLights(lightArr);
+    }
+
+    public static Device getVkDevice() {
+        return getRenderer().device;
+    }
+
+    public static Renderer getRenderer() {
+        return INSTANCE.rks.renderer;
     }
 
     public void handleInput(Window window, Scene scene, boolean inputConsumed) {

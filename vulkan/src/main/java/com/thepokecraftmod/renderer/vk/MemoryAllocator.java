@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
 import com.thepokecraftmod.renderer.vk.init.Instance;
 import com.thepokecraftmod.renderer.vk.init.PhysicalDevice;
 import org.lwjgl.system.MemoryStack;
@@ -14,7 +15,7 @@ public class MemoryAllocator {
 
     private final long allocator;
 
-    public MemoryAllocator(Instance instance, PhysicalDevice physicalDevice, VkDevice vkDevice) {
+    public MemoryAllocator(Instance instance, PhysicalDevice physicalDevice, VkDevice vkDevice, ExtensionProvider provider) {
         try (var stack = MemoryStack.stackPush()) {
             var pAllocator = stack.mallocPointer(1);
             var vmaVulkanFunctions = VmaVulkanFunctions.calloc(stack).set(instance.vk(), vkDevice);
@@ -22,6 +23,7 @@ public class MemoryAllocator {
                     .instance(instance.vk())
                     .device(vkDevice)
                     .physicalDevice(physicalDevice.vk())
+                    .flags(provider.vmaFlags)
                     .pVulkanFunctions(vmaVulkanFunctions);
 
             VkUtils.ok(vmaCreateAllocator(createInfo, pAllocator), "Failed to create VMA allocator");

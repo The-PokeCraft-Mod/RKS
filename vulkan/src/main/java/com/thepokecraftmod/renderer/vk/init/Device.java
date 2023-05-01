@@ -4,6 +4,7 @@ import com.thepokecraftmod.renderer.vk.MemoryAllocator;
 import com.thepokecraftmod.renderer.vk.VkUtils;
 import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,15 +64,33 @@ public class Device implements VkWrapper<VkDevice> {
                     .pEnabledFeatures(features)
                     .pQueueCreateInfos(queueCreationInfoBuf);
 
+            var chain = deviceCreateInfo.address();
+
+            var unusedFeatures = new ArrayList<>(provider.enabledFeatures);
+            for (var enabledFeature : provider.enabledFeatures)
+                switch (enabledFeature) {
+                    case "bufferDeviceAddress" -> {
+                        var next = VkPhysicalDeviceBufferDeviceAddressFeaturesKHR.calloc(stack)
+                                .sType$Default()
+                                .bufferDeviceAddress(true);
+                        MemoryUtil.memPutAddress(chain + 8, next.address()); // awful but + 8 guarantees pNext
+                        chain = next.address();
+                        unusedFeatures.remove(enabledFeature);
+                    }
+                }
+
+            if (unusedFeatures.size() > 0)
+                throw new RuntimeException("The following features dont exist: " + unusedFeatures);
+
             var pp = stack.mallocPointer(1);
             VkUtils.ok(vkCreateDevice(physicalDevice.vk(), deviceCreateInfo, null, pp),
                     "Failed to create device");
             this.vkDevice = new VkDevice(pp.get(0), physicalDevice.vk(), deviceCreateInfo);
 
-            this.memoryAllocator = new MemoryAllocator(instance, physicalDevice, this.vkDevice);
+            this.memoryAllocator = new MemoryAllocator(instance, physicalDevice, this.vkDevice, provider);
         }
     }
-    
+
     @Override
     public void close() {
         LOGGER.info("Closing Vulkan device");
@@ -86,7 +105,7 @@ public class Device implements VkWrapper<VkDevice> {
     public PhysicalDevice getPhysicalDevice() {
         return this.physicalDevice;
     }
-    
+
     @Override
     public VkDevice vk() {
         return this.vkDevice;

@@ -29,11 +29,11 @@ public class Renderer {
     private final GeometryPass geometryPass;
     private final LightPass lightPass;
     private final ShadowPass shadowPass;
-    private final CmdPool cmdPool;
+    public final CmdPool cmdPool;
 
     public final Device device;
     public final GlobalBuffers globalBuffers;
-    public final Queue.GraphicsQueue graphQueue;
+    public final Queue.GraphicsQueue graphicsQueue;
     public final Instance instance;
     public final PhysicalDevice physicalDevice;
     public final PipelineCache pipelineCache;
@@ -52,10 +52,10 @@ public class Renderer {
         this.physicalDevice = PhysicalDevice.createPhysicalDevice(this.instance, settings.preferredDevice());
         this.device = new Device(this.instance, this.physicalDevice, provider);
         this.surface = new Surface(this.physicalDevice, window.handle());
-        this.graphQueue = new Queue.GraphicsQueue(this.device, 0);
+        this.graphicsQueue = new Queue.GraphicsQueue(this.device, 0);
         this.presentQueue = new Queue.PresentQueue(this.device, this.surface, 0);
         this.swapChain = new Swapchain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());
-        this.cmdPool = new CmdPool(this.device, this.graphQueue.getQueueFamilyIndex());
+        this.cmdPool = new CmdPool(this.device, this.graphicsQueue.getQueueFamilyIndex());
         this.pipelineCache = new PipelineCache(this.device);
         this.gpuModels = new ArrayList<>();
         this.textureCache = new TextureCache();
@@ -84,7 +84,7 @@ public class Renderer {
 
     public void close() {
         this.presentQueue.waitIdle();
-        this.graphQueue.waitIdle();
+        this.graphicsQueue.waitIdle();
         this.device.waitIdle();
         this.textureCache.close();
         this.pipelineCache.close();
@@ -116,7 +116,7 @@ public class Renderer {
 
     public void loadModels(List<ModelData> models) {
         LOGGER.info("Loading {} model(s)", models.size());
-        this.gpuModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.cmdPool, this.graphQueue));
+        this.gpuModels.addAll(this.globalBuffers.loadModels(models, this.textureCache, this.cmdPool, this.graphicsQueue));
         LOGGER.info("Loaded {} model(s)", models.size());
 
         this.geometryPass.loadModels(this.textureCache);
@@ -138,7 +138,7 @@ public class Renderer {
         if (this.entitiesLoadedTimeStamp < scene.getEntitiesLoadedTimeStamp()) {
             this.entitiesLoadedTimeStamp = scene.getEntitiesLoadedTimeStamp();
             this.device.waitIdle();
-            this.globalBuffers.loadEntities(this.gpuModels, scene, this.cmdPool, this.graphQueue, this.swapChain.getNumImages());
+            this.globalBuffers.loadEntities(this.gpuModels, scene, this.cmdPool, this.graphicsQueue, this.swapChain.getNumImages());
             this.computeAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
             recordCommands();
         }
@@ -158,20 +158,20 @@ public class Renderer {
         var commandBuffer = acquireCurrentCommandBuffer();
         this.geometryPass.render();
         this.shadowPass.render();
-        submitSceneCommand(this.graphQueue, commandBuffer);
+        submitSceneCommand(this.graphicsQueue, commandBuffer);
 
         commandBuffer = this.lightPass.beginRecording(this.shadowPass.getShadowCascades());
         this.lightPass.recordCommandBuffer(commandBuffer);
         this.lightPass.endRecording(commandBuffer);
-        this.lightPass.submit(this.graphQueue);
+        this.lightPass.submit(this.graphicsQueue);
 
-        if (this.swapChain.presentImage(this.graphQueue)) window.setResized(true);
+        if (this.swapChain.presentImage(this.graphicsQueue)) window.setResized(true);
     }
 
     private void resize(Window window) {
         var settings = Settings.getInstance();
         this.device.waitIdle();
-        this.graphQueue.waitIdle();
+        this.graphicsQueue.waitIdle();
 
         this.swapChain.close();
         this.swapChain = new Swapchain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());

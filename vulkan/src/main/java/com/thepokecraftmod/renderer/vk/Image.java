@@ -5,12 +5,12 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.VkImageCreateInfo;
-import org.lwjgl.vulkan.VkMemoryAllocateInfo;
-import org.lwjgl.vulkan.VkMemoryRequirements;
 
+import java.util.function.Function;
+
+import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 import static org.lwjgl.util.vma.Vma.VMA_MEMORY_USAGE_AUTO;
 import static org.lwjgl.vulkan.VK11.*;
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class Image {
 
@@ -41,13 +41,14 @@ public class Image {
                     .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
                     .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
                     .tiling(VK_IMAGE_TILING_OPTIMAL)
-                    .usage(imageData.usage);
+                    .usage(imageData.usage)
+                    .pNext(imageData.pNext.apply(stack));
 
             var pImage = stack.mallocLong(1);
             var pAlloc = stack.mallocPointer(1);
 
             var createInfo = VmaAllocationCreateInfo.calloc(stack)
-                    //.requiredFlags(Vma.VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT)
+                    .requiredFlags(imageData.properties)
                     .usage(VMA_MEMORY_USAGE_AUTO);
 
             Vma.vmaCreateImage(device.memoryAllocator.vma(), imageCreateInfo, createInfo, pImage, pAlloc, null);
@@ -73,7 +74,7 @@ public class Image {
         return this.mipLevels;
     }
 
-    public long getImage() {
+    public long vk() {
         return this.image;
     }
 
@@ -89,6 +90,8 @@ public class Image {
         private int sampleCount;
         private int usage;
         private int width;
+        private int properties;
+        private Function<MemoryStack, Long> pNext = stack -> 0L;
 
         public ImageData() {
             this.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -129,6 +132,16 @@ public class Image {
 
         public ImageData width(int width) {
             this.width = width;
+            return this;
+        }
+
+        public ImageData properties(int properties) {
+            this.properties = properties;
+            return this;
+        }
+
+        public ImageData pNext(Function<MemoryStack, Long> pNext) {
+            this.pNext = pNext;
             return this;
         }
     }

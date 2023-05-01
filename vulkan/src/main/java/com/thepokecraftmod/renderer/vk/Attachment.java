@@ -26,7 +26,7 @@ public class Attachment {
         this.depthAttachment = aspectMask == VK_IMAGE_ASPECT_DEPTH_BIT;
 
         var imageViewData = new ImageView.ImageViewData().format(this.image.getFormat()).aspectMask(aspectMask);
-        this.imageView = new ImageView(device, this.image.getImage(), imageViewData);
+        this.imageView = new ImageView(device, this.image.vk(), imageViewData);
     }
 
     public static int calcAspectMask(int usage) {
