@@ -1,86 +1,30 @@
 package com.thepokecraftmod.renderer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Properties;
-
 public class Settings {
-    private static final Logger LOGGER = LoggerFactory.getLogger("RKS Settings");
-    private static final float DEFAULT_FOV = 60.0f;
-    private static final int DEFAULT_JOINT_MATRICES_BUF = 2000000;
-    private static final int DEFAULT_MAX_ANIM_WEIGHTS_BUF = 100000;
-    private static final int DEFAULT_MAX_INDICES_BUF = 5000000;
-    private static final int DEFAULT_MAX_MATERIALS = 500;
-    private static final int DEFAULT_MAX_VERTICES_BUF = 20000000;
-    private static final int DEFAULT_REQUESTED_IMAGES = 3;
-    private static final float DEFAULT_SHADOW_BIAS = 0.00005f;
-    private static final int DEFAULT_SHADOW_MAP_SIZE = 2048;
-    private static final int DEFAULT_UPS = 30;
-    private static final float DEFAULT_Z_FAR = 100.f;
-    private static final float DEFAULT_Z_NEAR = 1.0f;
-    private static final String FILENAME = "eng.properties";
     private static Settings instance;
-    private String defaultTexturePath;
-    private float fov;
-    private int maxAnimWeightsBuffer;
-    private int maxIndicesBuffer;
-    private int maxJointMatricesBuffer;
-    private int maxMaterials;
-    private int maxTextures;
-    private int maxVerticesBuffer;
-    private String physDeviceName;
-    private int requestedImages;
-    private boolean shaderRecompilation;
-    private float shadowBias;
-    private boolean shadowDebug;
-    private int shadowMapSize;
-    private boolean shadowPcf;
-    private int ups;
-    private boolean vSync;
-    private boolean validate;
-    private float zFar;
-    private float zNear;
-
-    private Settings() {
-        // Singleton
-        var props = new Properties();
-
-        try (var stream = Settings.class.getResourceAsStream("/" + FILENAME)) {
-            props.load(stream);
-            this.ups = Integer.parseInt(props.getOrDefault("ups", DEFAULT_UPS).toString());
-            this.validate = Boolean.parseBoolean(props.getOrDefault("vkValidate", false).toString());
-            this.physDeviceName = props.getProperty("physDeviceName");
-            this.requestedImages = Integer.parseInt(props.getOrDefault("requestedImages", DEFAULT_REQUESTED_IMAGES).toString());
-            this.vSync = Boolean.parseBoolean(props.getOrDefault("vsync", true).toString());
-            this.shaderRecompilation = Boolean.parseBoolean(props.getOrDefault("shaderRecompilation", false).toString());
-            this.fov = (float) Math.toRadians(Float.parseFloat(props.getOrDefault("fov", DEFAULT_FOV).toString()));
-            this.zNear = Float.parseFloat(props.getOrDefault("zNear", DEFAULT_Z_NEAR).toString());
-            this.zFar = Float.parseFloat(props.getOrDefault("zFar", DEFAULT_Z_FAR).toString());
-            this.defaultTexturePath = props.getProperty("defaultTexturePath");
-            this.maxMaterials = Integer.parseInt(props.getOrDefault("maxMaterials", DEFAULT_MAX_MATERIALS).toString());
-            this.shadowPcf = Boolean.parseBoolean(props.getOrDefault("shadowPcf", false).toString());
-            this.shadowBias = Float.parseFloat(props.getOrDefault("shadowBias", DEFAULT_SHADOW_BIAS).toString());
-            this.shadowMapSize = Integer.parseInt(props.getOrDefault("shadowMapSize", DEFAULT_SHADOW_MAP_SIZE).toString());
-            this.shadowDebug = Boolean.parseBoolean(props.getOrDefault("shadowDebug", false).toString());
-            this.maxTextures = this.maxMaterials * 3;
-            this.maxVerticesBuffer = Integer.parseInt(props.getOrDefault("maxVerticesBuffer", DEFAULT_MAX_VERTICES_BUF).toString());
-            this.maxIndicesBuffer = Integer.parseInt(props.getOrDefault("maxIndicesBuffer", DEFAULT_MAX_INDICES_BUF).toString());
-            this.maxAnimWeightsBuffer = Integer.parseInt(props.getOrDefault("maxAnimWeightsBuffer", DEFAULT_MAX_ANIM_WEIGHTS_BUF).toString());
-            this.maxJointMatricesBuffer = Integer.parseInt(props.getOrDefault("maxJointMatricesBuffer", DEFAULT_JOINT_MATRICES_BUF).toString());
-        } catch (IOException e) {
-            LOGGER.error("Could not read [{}] properties file", FILENAME, e);
-        }
-    }
+    private final float fov = 90;
+    private final int maxAnimWeightsBuffer = 1000000;
+    private final int maxIndicesBuffer = 5000000;
+    private final int maxJointMatricesBuffer = 20000000;
+    private final int maxMaterials = 500;
+    private final int maxTextures = maxMaterials * 3;
+    private final int maxVerticesBuffer = 20000000;
+    private final String physDeviceName = "NVIDIA GeForce RTX 2070 SUPER";
+    private final int requestedImages = 3;
+    private final boolean shaderRecompilation = true;
+    private final float shadowBias = 0.001f;
+    private final boolean shadowDebug = false;
+    private final int shadowMapSize = 2048;
+    private final boolean shadowPcf = true;
+    private final int ups = 60;
+    private final boolean vSync = false;
+    private final boolean validate = true;
+    private final float zFar = 0.1f;
+    private final float zNear = 1000f;
 
     public static synchronized Settings getInstance() {
         if (instance == null) instance = new Settings();
         return instance;
-    }
-
-    public String getDefaultTexturePath() {
-        return this.defaultTexturePath;
     }
 
     public float getFov() {
@@ -111,7 +55,7 @@ public class Settings {
         return this.maxVerticesBuffer;
     }
 
-    public String getPhysDeviceName() {
+    public String preferredDevice() {
         return this.physDeviceName;
     }
 

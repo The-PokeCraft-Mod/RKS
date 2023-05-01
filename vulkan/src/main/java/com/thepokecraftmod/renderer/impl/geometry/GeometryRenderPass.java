@@ -3,7 +3,7 @@ package com.thepokecraftmod.renderer.impl.geometry;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 import com.thepokecraftmod.renderer.vk.Attachment;
-import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.init.Device;
 
 import java.util.List;
 

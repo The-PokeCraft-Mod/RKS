@@ -3,6 +3,7 @@ package com.thepokecraftmod.renderer.impl.geometry;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.shaderc.Shaderc;
@@ -230,11 +231,11 @@ public class GeometryPass implements Closeable {
 
     public void render() {
         var idx = this.swapChain.getCurrentFrame();
+        VkUtils.copyMatrixToBuffer(this.projMatrixUniform, this.scene.getProjection().getProjectionMatrix());
         VkUtils.copyMatrixToBuffer(this.viewMatricesBuffer[idx], this.scene.getCamera().getViewMatrix());
     }
 
     public void resize(Swapchain swapChain) {
-        VkUtils.copyMatrixToBuffer(this.projMatrixUniform, this.scene.getProjection().getProjectionMatrix());
         this.swapChain = swapChain;
         this.geometryFrameBuffer.resize(swapChain);
     }

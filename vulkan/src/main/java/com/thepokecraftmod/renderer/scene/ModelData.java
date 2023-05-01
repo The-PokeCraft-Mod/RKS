@@ -12,7 +12,7 @@ public class ModelData {
     private final String modelId;
     public final ModelLocator locator;
     private List<AnimMeshData> animMeshDataList;
-    private List<PreComputedAnimation> animationsList;
+    private List<PreComputedAnimation> animations;
 
     public ModelData(String modelId, List<MeshData> meshDataList, List<Material> materialList, ModelLocator locator) {
         this.modelId = modelId;
@@ -30,11 +30,11 @@ public class ModelData {
     }
 
     public List<PreComputedAnimation> getAnimations() {
-        return this.animationsList;
+        return this.animations;
     }
 
     public void setAnimations(List<PreComputedAnimation> animationsList) {
-        this.animationsList = animationsList;
+        this.animations = animationsList;
     }
 
     public List<Material> getMaterialList() {
@@ -50,7 +50,7 @@ public class ModelData {
     }
 
     public boolean hasAnimations() {
-        return this.animationsList != null && !this.animationsList.isEmpty();
+        return this.animations != null && !this.animations.isEmpty();
     }
 
     public record AnimMeshData(float[] weights, int[] boneIds) {

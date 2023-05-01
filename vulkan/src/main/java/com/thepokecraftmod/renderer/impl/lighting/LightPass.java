@@ -3,6 +3,7 @@ package com.thepokecraftmod.renderer.impl.lighting;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;

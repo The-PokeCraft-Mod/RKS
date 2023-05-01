@@ -1,9 +1,14 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.vk.init;
 
+import com.thepokecraftmod.renderer.vk.MemoryAllocator;
+import com.thepokecraftmod.renderer.vk.VkUtils;
+import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 
 import static org.lwjgl.vulkan.VK11.*;
 
@@ -14,15 +19,21 @@ public class Device implements VkWrapper<VkDevice> {
     private final boolean samplerAnisotropy;
     private final VkDevice vkDevice;
 
-    public Device(Instance instance, PhysicalDevice physicalDevice) {
+    public Device(Instance instance, PhysicalDevice physicalDevice, ExtensionProvider provider) {
         LOGGER.info("Creating device");
 
         this.physicalDevice = physicalDevice;
         try (var stack = MemoryStack.stackPush()) {
 
             // Define required extensions
-            var requiredExtensions = stack.mallocPointer(1);
-            requiredExtensions.put(0, stack.ASCII(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME));
+            var requiredExtensions = new ArrayList<>(provider.deviceExtensions);
+            requiredExtensions.add(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+            var pRequiredExtensions = stack.mallocPointer(requiredExtensions.size());
+            for (var i = 0; i < requiredExtensions.size(); i++) {
+                LOGGER.info("Using Extension {}", requiredExtensions.get(i));
+                pRequiredExtensions.put(i, stack.ASCII(requiredExtensions.get(i)));
+            }
 
             // Set up required features
             var features = VkPhysicalDeviceFeatures.calloc(stack);
@@ -48,7 +59,7 @@ public class Device implements VkWrapper<VkDevice> {
 
             var deviceCreateInfo = VkDeviceCreateInfo.calloc(stack)
                     .sType$Default()
-                    .ppEnabledExtensionNames(requiredExtensions)
+                    .ppEnabledExtensionNames(pRequiredExtensions)
                     .pEnabledFeatures(features)
                     .pQueueCreateInfos(queueCreationInfoBuf);
 

@@ -1,6 +1,6 @@
 package com.thepokecraftmod.renderer.vk.descriptor;
 
-import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.VkUtils;
 import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.system.MemoryStack;

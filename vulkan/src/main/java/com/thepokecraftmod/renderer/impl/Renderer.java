@@ -9,6 +9,10 @@ import com.thepokecraftmod.renderer.impl.shadows.ShadowPass;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.vk.*;
+import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
+import com.thepokecraftmod.renderer.vk.init.Instance;
+import com.thepokecraftmod.renderer.vk.init.PhysicalDevice;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,15 +46,15 @@ public class Renderer {
     public Fence[] fences;
     public Swapchain swapChain;
 
-    public Renderer(Window window, Scene scene) {
-        var engProps = Settings.getInstance();
-        this.instance = new Instance(engProps.isValidate(), window != null);
-        this.physicalDevice = PhysicalDevice.createPhysicalDevice(this.instance, engProps.getPhysDeviceName());
-        this.device = new Device(this.instance, this.physicalDevice);
-        this.surface = new Surface(this.physicalDevice, window.getWindowHandle());
+    public Renderer(Window window, ExtensionProvider provider, Scene scene) {
+        var settings = Settings.getInstance();
+        this.instance = new Instance(settings.isValidate(), window != null, provider);
+        this.physicalDevice = PhysicalDevice.createPhysicalDevice(this.instance, settings.preferredDevice());
+        this.device = new Device(this.instance, this.physicalDevice, provider);
+        this.surface = new Surface(this.physicalDevice, window.handle());
         this.graphQueue = new Queue.GraphicsQueue(this.device, 0);
         this.presentQueue = new Queue.PresentQueue(this.device, this.surface, 0);
-        this.swapChain = new Swapchain(this.device, this.surface, window, engProps.getRequestedImages(), engProps.isvSync());
+        this.swapChain = new Swapchain(this.device, this.surface, window, settings.getRequestedImages(), settings.isvSync());
         this.cmdPool = new CmdPool(this.device, this.graphQueue.getQueueFamilyIndex());
         this.pipelineCache = new PipelineCache(this.device);
         this.gpuModels = new ArrayList<>();

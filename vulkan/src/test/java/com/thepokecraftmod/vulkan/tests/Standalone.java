@@ -4,6 +4,7 @@ import com.thepokecraftmod.renderer.Rks;
 import com.thepokecraftmod.renderer.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.scene.*;
+import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
 import com.thepokecraftmod.rks.ModelLocator;
 import com.thepokecraftmod.rks.assimp.AssimpModelLoader;
 import com.thepokecraftmod.rks.model.Model;
@@ -42,7 +43,7 @@ public class Standalone {
     }
 
     public Standalone() {
-        this.rks = new Rks(new DebugWindow("RKS Standalone Test"));
+        this.rks = new Rks(new DebugWindow("RKS Standalone Test"), new ExtensionProvider());
         var id = "rayquaza";
         var locator = new TestModelLocator("testModels/rayquaza");
         var model = AssimpModelLoader.load(
@@ -90,7 +91,6 @@ public class Standalone {
 
         var updateTime = initialTime;
         while (!rks.window.shouldClose()) {
-
             rks.scene.getCamera().setHasMoved(false);
             rks.window.pollEvents();
 
@@ -107,7 +107,6 @@ public class Standalone {
 
             rks.renderer.render(rks.window, rks.scene);
         }
-
         rks.close();
     }
 

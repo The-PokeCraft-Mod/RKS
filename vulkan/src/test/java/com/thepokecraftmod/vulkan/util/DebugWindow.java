@@ -60,7 +60,7 @@ public class DebugWindow implements Window {
         return this.width;
     }
 
-    public long getWindowHandle() {
+    public long handle() {
         return this.windowHandle;
     }
 

@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.vk.init.PhysicalDevice;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;

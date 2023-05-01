@@ -8,7 +8,7 @@ public class RksEntity {
 
     private final String id;
     private final String modelId;
-    private final Matrix4f modelMatrix;
+    public final Matrix4f modelMatrix;
     private final Vector3f position;
     private final Quaternionf rotation;
     private AnimationInstance animationInstance;

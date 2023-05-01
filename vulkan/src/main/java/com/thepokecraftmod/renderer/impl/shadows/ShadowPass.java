@@ -3,6 +3,7 @@ package com.thepokecraftmod.renderer.impl.shadows;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.shaderc.Shaderc;
@@ -204,6 +205,7 @@ public class ShadowPass {
     }
 
     public void render() {
+        // FIXME: this check is most likely broken
         if (this.scene.isLightChanged() || this.scene.getCamera().isHasMoved())
             CascadeShadow.updateCascadeShadows(this.cascadeShadows, this.scene);
 

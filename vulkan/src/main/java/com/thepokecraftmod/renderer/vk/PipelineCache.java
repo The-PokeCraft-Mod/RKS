@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.vk.init.Device;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkPipelineCacheCreateInfo;
 import org.slf4j.Logger;

@@ -1,6 +1,5 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
-import com.thepokecraftmod.renderer.vk.Device;
 import org.lwjgl.system.MemoryStack;
 import com.thepokecraftmod.renderer.vk.FrameBuffer;
 import com.thepokecraftmod.renderer.vk.Swapchain;

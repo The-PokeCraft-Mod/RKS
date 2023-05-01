@@ -19,7 +19,7 @@ public interface Window extends Closeable {
 
     int getHeight();
 
-    long getWindowHandle();
+    long handle();
 
     void setResized(boolean resized);
 

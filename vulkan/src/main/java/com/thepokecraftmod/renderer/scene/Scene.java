@@ -11,7 +11,7 @@ public class Scene {
     private final Vector4f ambientLight;
     private final Camera camera;
     private final Map<String, List<RksEntity>> entitiesMap;
-    private final Projection projection;
+    public final Projection projection;
     private Light directionalLight;
     private long entitiesLoadedTimeStamp;
     private ImGuiRenderer guiInstance;

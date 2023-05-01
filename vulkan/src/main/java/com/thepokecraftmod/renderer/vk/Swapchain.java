@@ -1,5 +1,7 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.vk.init.PhysicalDevice;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;

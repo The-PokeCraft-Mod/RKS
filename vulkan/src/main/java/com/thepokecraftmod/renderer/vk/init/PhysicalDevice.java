@@ -1,5 +1,7 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.vk.init;
 
+import com.thepokecraftmod.renderer.vk.VkUtils;
+import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;

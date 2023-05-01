@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.impl.shadows;
 
+import com.thepokecraftmod.renderer.vk.init.Device;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

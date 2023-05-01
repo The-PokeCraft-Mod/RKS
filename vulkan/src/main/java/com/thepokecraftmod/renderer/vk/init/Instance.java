@@ -1,5 +1,6 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.vk.init;
 
+import com.thepokecraftmod.renderer.vk.VkWrapper;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -24,7 +25,7 @@ public class Instance implements Closeable, VkWrapper<VkInstance> {
     private final long pDebugCallback;
     private final VkDebugUtilsMessengerCreateInfoEXT debugCallback;
 
-    public Instance(boolean enableDebug, boolean windowAvailable) {
+    public Instance(boolean enableDebug, boolean windowAvailable, ExtensionProvider provider) {
         LOGGER.info("Creating VkInstance");
         try (var stack = MemoryStack.stackPush()) {
             var appInfo = VkApplicationInfo.calloc(stack)
@@ -35,7 +36,7 @@ public class Instance implements Closeable, VkWrapper<VkInstance> {
                     .apiVersion(VK12.VK_API_VERSION_1_2);
 
             var requiredLayers = new ArrayList<String>();
-            var requiredExtensions = new ArrayList<String>();
+            var requiredExtensions = new ArrayList<>(provider.instanceExtensions);
 
             if (enableDebug) requiredLayers.addAll(getSupportedValidationLayers());
             if (enableDebug) requiredExtensions.add(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

@@ -1,5 +1,7 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.vk.init.Device;
+
 import static org.lwjgl.vulkan.VK11.*;
 
 public class Attachment {

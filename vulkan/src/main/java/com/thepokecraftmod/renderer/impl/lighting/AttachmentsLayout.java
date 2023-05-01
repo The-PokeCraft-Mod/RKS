@@ -4,7 +4,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutBinding;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutCreateInfo;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
-import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

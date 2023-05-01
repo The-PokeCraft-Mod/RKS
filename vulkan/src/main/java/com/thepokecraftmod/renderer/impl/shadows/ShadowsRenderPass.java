@@ -3,7 +3,7 @@ package com.thepokecraftmod.renderer.impl.shadows;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 import com.thepokecraftmod.renderer.vk.Attachment;
-import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.init.Device;
 
 import static org.lwjgl.vulkan.VK11.*;
 import static com.thepokecraftmod.renderer.vk.VkUtils.ok;

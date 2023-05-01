@@ -2,7 +2,7 @@ package com.thepokecraftmod.renderer.impl.lighting;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.Swapchain;
 
 import static org.lwjgl.vulkan.VK11.*;

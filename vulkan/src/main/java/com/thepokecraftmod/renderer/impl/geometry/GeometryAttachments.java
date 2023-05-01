@@ -1,7 +1,7 @@
 package com.thepokecraftmod.renderer.impl.geometry;
 
 import com.thepokecraftmod.renderer.vk.Attachment;
-import com.thepokecraftmod.renderer.vk.Device;
+import com.thepokecraftmod.renderer.vk.init.Device;
 
 import java.util.ArrayList;
 import java.util.List;
