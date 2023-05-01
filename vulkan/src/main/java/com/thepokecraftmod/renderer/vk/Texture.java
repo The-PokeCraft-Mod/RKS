@@ -20,7 +20,7 @@ public class Texture {
     private final int mipLevels;
     private final int width;
     private final String textureId;
-    private boolean transparent;
+    private final boolean transparent;
     private Image image;
     private ImageView imageView;
     private boolean recordedTransition;
@@ -68,15 +68,6 @@ public class Texture {
         createTextureResources(device, rgbaBuffer, imageFormat);
     }
 
-    public Texture(Device device, ByteBuffer buf, int width, int height, int imageFormat) {
-        this.width = width;
-        this.height = height;
-        this.mipLevels = 1;
-        this.textureId = null;
-
-        createTextureResources(device, buf, imageFormat);
-    }
-
     public void close() {
         closeStaging();
         this.imageView.close();
@@ -110,7 +101,7 @@ public class Texture {
         this.image = new Image(device, imageData);
         var imageViewData = new ImageView.ImageViewData().format(this.image.getFormat()).
                 aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).mipLevels(this.mipLevels);
-        this.imageView = new ImageView(device, this.image.getVkImage(), imageViewData);
+        this.imageView = new ImageView(device, this.image.getImage(), imageViewData);
     }
 
     public String getTextureId() {
@@ -130,7 +121,6 @@ public class Texture {
     }
 
     private void recordCopyBuffer(MemoryStack stack, CmdBuffer cmd, VulkanBuffer bufferData) {
-
         var region = VkBufferImageCopy.calloc(1, stack)
                 .bufferOffset(0)
                 .bufferRowLength(0)
@@ -144,8 +134,7 @@ public class Texture {
                 .imageOffset(it -> it.x(0).y(0).z(0))
                 .imageExtent(it -> it.width(this.width).height(this.height).depth(1));
 
-        vkCmdCopyBufferToImage(cmd.vk(), bufferData.getBuffer(), this.image.getVkImage(),
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
+        vkCmdCopyBufferToImage(cmd.vk(), bufferData.getBuffer(), this.image.getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
     }
 
     private void recordGenerateMipMaps(MemoryStack stack, CmdBuffer cmd) {
@@ -157,7 +146,7 @@ public class Texture {
 
         var barrier = VkImageMemoryBarrier.calloc(1, stack)
                 .sType$Default()
-                .image(this.image.getVkImage())
+                .image(this.image.getImage())
                 .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                 .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                 .subresourceRange(subResourceRange);
@@ -200,8 +189,8 @@ public class Texture {
                             .layerCount(1));
 
             vkCmdBlitImage(cmd.vk(),
-                    this.image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    this.image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    this.image.getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    this.image.getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     blit, VK_FILTER_LINEAR);
 
             barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
@@ -237,7 +226,7 @@ public class Texture {
                 .newLayout(VK10.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
                 .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                 .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .image(this.image.getVkImage())
+                .image(this.image.getImage())
                 .subresourceRange(it -> it
                         .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
                         .baseMipLevel(0)

@@ -18,6 +18,7 @@ public class LevelRendererMixin {
 
     @Inject(method = "renderLevel", at = @At("RETURN"))
     private void interop$render3DVulkan(PoseStack poseStack, float partialTick, long finishNanoTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projectionMatrix, CallbackInfo ci) {
+        // TODO: semaphore block. Then render
         CreeperReplacementTest.INSTANCE.render(RenderSystem.getProjectionMatrix());
     }
 }

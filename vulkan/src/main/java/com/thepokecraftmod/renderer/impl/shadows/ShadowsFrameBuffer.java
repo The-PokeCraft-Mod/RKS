@@ -29,7 +29,7 @@ public class ShadowsFrameBuffer {
             var imageViewData = new ImageView.ImageViewData().format(depthImage.getFormat()).
                     aspectMask(Attachment.calcAspectMask(usage)).viewType(VK_IMAGE_VIEW_TYPE_2D_ARRAY).
                     baseArrayLayer(0).layerCount(VkConstants.SHADOW_MAP_CASCADE_COUNT);
-            var depthImageView = new ImageView(device, depthImage.getVkImage(), imageViewData);
+            var depthImageView = new ImageView(device, depthImage.getImage(), imageViewData);
             this.depthAttachment = new Attachment(depthImage, depthImageView, true);
 
             this.shadowsRenderPass = new ShadowsRenderPass(device, this.depthAttachment);

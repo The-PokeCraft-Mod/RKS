@@ -12,7 +12,7 @@ import static org.lwjgl.util.vma.Vma.vmaDestroyAllocator;
 
 public class MemoryAllocator {
 
-    private final long vmaAllocator;
+    private final long allocator;
 
     public MemoryAllocator(Instance instance, PhysicalDevice physicalDevice, VkDevice vkDevice) {
         try (var stack = MemoryStack.stackPush()) {
@@ -25,15 +25,15 @@ public class MemoryAllocator {
                     .pVulkanFunctions(vmaVulkanFunctions);
 
             VkUtils.ok(vmaCreateAllocator(createInfo, pAllocator), "Failed to create VMA allocator");
-            this.vmaAllocator = pAllocator.get(0);
+            this.allocator = pAllocator.get(0);
         }
     }
 
     public void close() {
-        vmaDestroyAllocator(this.vmaAllocator);
+        vmaDestroyAllocator(this.allocator);
     }
 
-    public long getVmaAllocator() {
-        return this.vmaAllocator;
+    public long vma() {
+        return this.allocator;
     }
 }

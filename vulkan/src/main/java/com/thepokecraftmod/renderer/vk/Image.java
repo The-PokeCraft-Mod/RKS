@@ -2,10 +2,13 @@ package com.thepokecraftmod.renderer.vk;
 
 import com.thepokecraftmod.renderer.vk.init.Device;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.vma.Vma;
+import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.VkImageCreateInfo;
 import org.lwjgl.vulkan.VkMemoryAllocateInfo;
 import org.lwjgl.vulkan.VkMemoryRequirements;
 
+import static org.lwjgl.util.vma.Vma.VMA_MEMORY_USAGE_AUTO;
 import static org.lwjgl.vulkan.VK11.*;
 import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
@@ -14,8 +17,8 @@ public class Image {
     private final Device device;
     private final int format;
     private final int mipLevels;
-    private final long vkImage;
-    private final long vkMemory;
+    private final long image;
+    public final long allocation;
 
     public Image(Device device, ImageData imageData) {
         this.device = device;
@@ -40,34 +43,26 @@ public class Image {
                     .tiling(VK_IMAGE_TILING_OPTIMAL)
                     .usage(imageData.usage);
 
-            var lp = stack.mallocLong(1);
-            ok(vkCreateImage(device.vk(), imageCreateInfo, null, lp), "Failed to create image");
-            this.vkImage = lp.get(0);
+            var pImage = stack.mallocLong(1);
+            var pAlloc = stack.mallocPointer(1);
 
-            // Get memory requirements for this object
-            var memReqs = VkMemoryRequirements.calloc(stack);
-            vkGetImageMemoryRequirements(device.vk(), this.vkImage, memReqs);
+            var createInfo = VmaAllocationCreateInfo.calloc(stack)
+                    //.requiredFlags(Vma.VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT)
+                    .usage(VMA_MEMORY_USAGE_AUTO);
 
-            // Select memory size and type
-            var memAlloc = VkMemoryAllocateInfo.calloc(stack)
-                    .sType$Default()
-                    .allocationSize(memReqs.size())
-                    .memoryTypeIndex(VkUtils.memoryTypeFromProperties(device.getPhysicalDevice(),
-                            memReqs.memoryTypeBits(), 0));
+            Vma.vmaCreateImage(device.memoryAllocator.vma(), imageCreateInfo, createInfo, pImage, pAlloc, null);
 
-            // Allocate memory
-            ok(vkAllocateMemory(device.vk(), memAlloc, null, lp), "Failed to allocate memory");
-            this.vkMemory = lp.get(0);
+            ok(vkCreateImage(device.vk(), imageCreateInfo, null, pImage), "Failed to create image");
+            this.image = pImage.get(0);
+            this.allocation = pAlloc.get(0);
 
-            // Bind memory
-            ok(vkBindImageMemory(device.vk(), this.vkImage, this.vkMemory, 0),
-                    "Failed to bind image memory");
+            Vma.vmaBindImageMemory(device.memoryAllocator.vma(), allocation, image);
         }
     }
 
     public void close() {
-        vkDestroyImage(this.device.vk(), this.vkImage, null);
-        vkFreeMemory(this.device.vk(), this.vkMemory, null);
+        vkDestroyImage(this.device.vk(), this.image, null);
+        vkFreeMemory(this.device.vk(), this.allocation, null);
     }
 
     public int getFormat() {
@@ -78,12 +73,12 @@ public class Image {
         return this.mipLevels;
     }
 
-    public long getVkImage() {
-        return this.vkImage;
+    public long getImage() {
+        return this.image;
     }
 
-    public long getVkMemory() {
-        return this.vkMemory;
+    public long getAllocation() {
+        return this.allocation;
     }
 
     public static class ImageData {

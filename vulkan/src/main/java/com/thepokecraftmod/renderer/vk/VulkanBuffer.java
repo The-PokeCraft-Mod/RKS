@@ -13,19 +13,18 @@ import static org.lwjgl.vulkan.VK11.VK_SHARING_MODE_EXCLUSIVE;
 
 public class VulkanBuffer {
 
-    private final long allocation;
+    public final long allocation;
     private final long buffer;
     private final Device device;
-    private final PointerBuffer pb;
+    private final PointerBuffer pBuffer;
     private final long requestedSize;
 
     private long mappedMemory;
 
-    public VulkanBuffer(Device device, long size, int bufferUsage, int memoryUsage,
-                        int requiredFlags) {
-        this.device = device;
-        this.requestedSize = size;
+    public VulkanBuffer(Device device, long size, int bufferUsage, int memoryUsage, int requiredFlags) {
         try (var stack = MemoryStack.stackPush()) {
+            this.device = device;
+            this.requestedSize = size;
             var bufferCreateInfo = VkBufferCreateInfo.calloc(stack)
                     .sType$Default()
                     .size(size)
@@ -38,22 +37,21 @@ public class VulkanBuffer {
 
             var pAllocation = stack.callocPointer(1);
             var lp = stack.mallocLong(1);
-            VkUtils.ok(vmaCreateBuffer(device.getMemoryAllocator().getVmaAllocator(), bufferCreateInfo, allocInfo, lp,
-                    pAllocation, null), "Failed to create buffer");
+            VkUtils.ok(vmaCreateBuffer(device.getMemoryAllocator().vma(), bufferCreateInfo, allocInfo, lp, pAllocation, null), "Failed to create buffer");
             this.buffer = lp.get(0);
             this.allocation = pAllocation.get(0);
-            this.pb = MemoryUtil.memAllocPointer(1);
+            this.pBuffer = MemoryUtil.memAllocPointer(1);
         }
     }
 
     public void close() {
-        MemoryUtil.memFree(this.pb);
+        MemoryUtil.memFree(this.pBuffer);
         unMap();
-        vmaDestroyBuffer(this.device.getMemoryAllocator().getVmaAllocator(), this.buffer, this.allocation);
+        vmaDestroyBuffer(this.device.getMemoryAllocator().vma(), this.buffer, this.allocation);
     }
 
     public void flush() {
-        vmaFlushAllocation(this.device.getMemoryAllocator().getVmaAllocator(), this.allocation, 0, this.requestedSize);
+        vmaFlushAllocation(this.device.getMemoryAllocator().vma(), this.allocation, 0, this.requestedSize);
     }
 
     public long getBuffer() {
@@ -66,15 +64,15 @@ public class VulkanBuffer {
 
     public long map() {
         if (this.mappedMemory == NULL) {
-            VkUtils.ok(vmaMapMemory(this.device.getMemoryAllocator().getVmaAllocator(), this.allocation, this.pb), "Failed to map allocation");
-            this.mappedMemory = this.pb.get(0);
+            VkUtils.ok(vmaMapMemory(this.device.getMemoryAllocator().vma(), this.allocation, this.pBuffer), "Failed to map allocation");
+            this.mappedMemory = this.pBuffer.get(0);
         }
         return this.mappedMemory;
     }
 
     public void unMap() {
         if (this.mappedMemory != NULL) {
-            vmaUnmapMemory(this.device.getMemoryAllocator().getVmaAllocator(), this.allocation);
+            vmaUnmapMemory(this.device.getMemoryAllocator().vma(), this.allocation);
             this.mappedMemory = NULL;
         }
     }

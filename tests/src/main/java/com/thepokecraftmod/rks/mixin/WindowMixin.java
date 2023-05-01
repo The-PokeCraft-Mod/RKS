@@ -28,7 +28,7 @@ public class WindowMixin {
     @ModifyConstant(method = "<init>", constant = @Constant(intValue = 3))
     private int pokecraft$changeGlMajor(int constant) {
         LOGGER.warn("Enabling OpenGL 4.5+");
-        System.loadLibrary("renderdoc");
+//        System.loadLibrary("renderdoc");
         return 4;
     }
 

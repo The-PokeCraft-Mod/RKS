@@ -14,7 +14,7 @@ import static org.lwjgl.vulkan.VK11.*;
 
 public class Device implements VkWrapper<VkDevice> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);
-    private final MemoryAllocator memoryAllocator;
+    public final MemoryAllocator memoryAllocator;
     private final PhysicalDevice physicalDevice;
     private final boolean samplerAnisotropy;
     private final VkDevice vkDevice;

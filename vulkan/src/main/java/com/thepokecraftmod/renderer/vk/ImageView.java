@@ -2,6 +2,7 @@ package com.thepokecraftmod.renderer.vk;
 
 import com.thepokecraftmod.renderer.vk.init.Device;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 
 import static org.lwjgl.vulkan.VK11.*;
@@ -20,6 +21,7 @@ public class ImageView {
         this.mipLevels = imageViewData.mipLevels;
         try (var stack = MemoryStack.stackPush()) {
             var lp = stack.mallocLong(1);
+
             var viewCreateInfo = VkImageViewCreateInfo.calloc(stack)
                     .sType$Default()
                     .image(vkImage)
@@ -32,8 +34,7 @@ public class ImageView {
                             .baseArrayLayer(imageViewData.baseArrayLayer)
                             .layerCount(imageViewData.layerCount));
 
-            ok(vkCreateImageView(device.vk(), viewCreateInfo, null, lp),
-                    "Failed to create image view");
+            ok(vkCreateImageView(device.vk(), viewCreateInfo, null, lp), "Failed to create image view");
             this.vkImageView = lp.get(0);
         }
     }
