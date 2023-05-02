@@ -11,7 +11,7 @@ import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 public class LightingRenderPass {
 
     private final Device device;
-    private final long vkRenderPass;
+    private final long renderPass;
 
     public LightingRenderPass(Swapchain swapChain) {
         this.device = swapChain.getDevice();
@@ -56,15 +56,15 @@ public class LightingRenderPass {
             var lp = stack.mallocLong(1);
             ok(vkCreateRenderPass(this.device.vk(), renderPassInfo, null, lp),
                     "Failed to create render pass");
-            this.vkRenderPass = lp.get(0);
+            this.renderPass = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyRenderPass(this.device.vk(), this.vkRenderPass, null);
+        vkDestroyRenderPass(this.device.vk(), this.renderPass, null);
     }
 
     public long vk() {
-        return this.vkRenderPass;
+        return this.renderPass;
     }
 }

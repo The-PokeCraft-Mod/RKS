@@ -138,7 +138,7 @@ public class GeometryPass implements Closeable {
     }
 
     private void createPipeline() {
-        var creationInfo = new Pipeline.PipeLineCreationInfo(this.frameBuffer.getRenderPass().getVkRenderPass(), this.shaderProgram, GeometryAttachments.NUMBER_COLOR_ATTACHMENTS, true, true, 0, new InstancedVertexBufferStructure(), descSetLayouts);
+        var creationInfo = new Pipeline.PipeLineCreationInfo(this.frameBuffer.getRenderPass().vk(), this.shaderProgram, GeometryAttachments.NUMBER_COLOR_ATTACHMENTS, true, true, 0, new InstancedVertexBufferStructure(), descSetLayouts);
         this.pipeline = new Pipeline(this.cache, creationInfo);
         creationInfo.close();
     }
@@ -182,7 +182,7 @@ public class GeometryPass implements Closeable {
                     clearValues.apply(v -> v.color().float32(0, 0.0f).float32(1, 0.0f).float32(2, 0.0f).float32(3, 1));
             clearValues.flip();
 
-            var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack).sType$Default().renderPass(this.frameBuffer.getRenderPass().getVkRenderPass()).pClearValues(clearValues).renderArea(a -> a.extent().set(width, height)).framebuffer(frameBuffer.vk());
+            var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack).sType$Default().renderPass(this.frameBuffer.getRenderPass().vk()).pClearValues(clearValues).renderArea(a -> a.extent().set(width, height)).framebuffer(frameBuffer.vk());
             var cmdHandle = cmdBuffer.vk();
 
             vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, this.barrier.vk(), null, null);

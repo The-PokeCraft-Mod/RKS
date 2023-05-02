@@ -1,7 +1,7 @@
 package com.thepokecraftmod.renderer.wrapper.image;
 
-import com.thepokecraftmod.renderer.wrapper.core.VkBuffer;
 import com.thepokecraftmod.renderer.wrapper.cmd.CmdBuffer;
+import com.thepokecraftmod.renderer.wrapper.core.VkBuffer;
 import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -97,13 +97,18 @@ public class Texture {
 
     private void createTextureResources(Device device, ByteBuffer buf, int imageFormat) {
         createStgBuffer(device, buf);
-        var imageData = new Image.ImageData().width(this.width).height(this.height).
-                usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT).
-                format(imageFormat).mipLevels(this.mipLevels);
-        this.image = new Image(device, imageData);
-        var imageViewData = new ImageView.ImageViewData().format(this.image.getFormat()).
-                aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).mipLevels(this.mipLevels);
-        this.imageView = new ImageView(device, this.image.vk(), imageViewData);
+        this.image = new Image.Builder()
+                .width(this.width)
+                .height(this.height)
+                .usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+                .format(imageFormat)
+                .mipLevels(this.mipLevels)
+                .build(device);
+        this.imageView = new ImageView.Builder()
+                .format(this.image.format)
+                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                .mipLevels(this.mipLevels)
+                .build(device, image);
     }
 
     public String getTextureId() {

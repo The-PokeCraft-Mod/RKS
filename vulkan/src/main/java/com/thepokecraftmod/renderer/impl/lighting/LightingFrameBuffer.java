@@ -36,7 +36,7 @@ public class LightingFrameBuffer {
             this.frameBuffers = new FrameBuffer[numImages];
             var attachmentsBuff = stack.mallocLong(1);
             for (var i = 0; i < numImages; i++) {
-                attachmentsBuff.put(0, swapChain.getImageViews()[i].getVkImageView());
+                attachmentsBuff.put(0, swapChain.getImageViews()[i].vk());
                 this.frameBuffers[i] = new FrameBuffer(swapChain.getDevice(), width, height, attachmentsBuff, this.lightingRenderPass.vk(), 1);
             }
         }

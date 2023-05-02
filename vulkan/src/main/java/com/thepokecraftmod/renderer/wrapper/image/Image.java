@@ -1,6 +1,7 @@
 package com.thepokecraftmod.renderer.wrapper.image;
 
 import com.thepokecraftmod.renderer.wrapper.core.VkUtils;
+import com.thepokecraftmod.renderer.wrapper.core.VkWrapper;
 import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -12,44 +13,44 @@ import java.util.function.Function;
 import static org.lwjgl.util.vma.Vma.VMA_MEMORY_USAGE_AUTO;
 import static org.lwjgl.vulkan.VK11.*;
 
-public class Image {
+public class Image implements VkWrapper<Long> {
 
-    private final Device device;
-    private final int format;
-    private final int mipLevels;
+    public final Device device;
+    public final int format;
+    public final int mipLevels;
     private final long image;
     public final long allocation;
 
-    public Image(Device device, ImageData imageData) {
+    private Image(Device device, Builder builder) {
         try (var stack = MemoryStack.stackPush()) {
             this.device = device;
-            this.format = imageData.format;
-            this.mipLevels = imageData.mipLevels;
-            var allocator = imageData.vmaAllocator == 0 ? device.memoryAllocator.vma() : imageData.vmaAllocator;
+            this.format = builder.format;
+            this.mipLevels = builder.mipLevels;
+            var allocator = builder.vmaAllocator == 0 ? device.memoryAllocator.vma() : builder.vmaAllocator;
 
             var imageCreateInfo = VkImageCreateInfo.calloc(stack)
                     .sType$Default()
                     .imageType(VK_IMAGE_TYPE_2D)
                     .format(this.format)
                     .extent(it -> it
-                            .width(imageData.width)
-                            .height(imageData.height)
+                            .width(builder.width)
+                            .height(builder.height)
                             .depth(1)
                     )
                     .mipLevels(this.mipLevels)
-                    .arrayLayers(imageData.arrayLayers)
-                    .samples(imageData.sampleCount)
+                    .arrayLayers(builder.arrayLayers)
+                    .samples(builder.sampleCount)
                     .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
                     .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
                     .tiling(VK_IMAGE_TILING_OPTIMAL)
-                    .usage(imageData.usage)
-                    .pNext(imageData.pNext.apply(stack));
+                    .usage(builder.usage)
+                    .pNext(builder.pNext.apply(stack));
 
             var pImage = stack.mallocLong(1);
             var pAlloc = stack.mallocPointer(1);
 
             var createInfo = VmaAllocationCreateInfo.calloc(stack)
-                    .requiredFlags(imageData.properties)
+                    .requiredFlags(builder.properties)
                     .usage(VMA_MEMORY_USAGE_AUTO);
 
             VkUtils.ok(Vma.vmaCreateImage(allocator, imageCreateInfo, createInfo, pImage, pAlloc, null), "Failed to create image");
@@ -58,28 +59,18 @@ public class Image {
         }
     }
 
+    @Override
     public void close() {
         vkDestroyImage(this.device.vk(), this.image, null);
         vkFreeMemory(this.device.vk(), this.allocation, null);
     }
 
-    public int getFormat() {
-        return this.format;
-    }
-
-    public int getMipLevels() {
-        return this.mipLevels;
-    }
-
-    public long vk() {
+    @Override
+    public Long vk() {
         return this.image;
     }
 
-    public long getAllocation() {
-        return this.allocation;
-    }
-
-    public static class ImageData {
+    public static class Builder {
         private int arrayLayers;
         private int format;
         private int height;
@@ -91,61 +82,65 @@ public class Image {
         private Function<MemoryStack, Long> pNext = stack -> 0L;
         private long vmaAllocator;
 
-        public ImageData() {
+        public Builder() {
             this.format = VK_FORMAT_R8G8B8A8_SRGB;
             this.mipLevels = 1;
             this.sampleCount = 1;
             this.arrayLayers = 1;
         }
 
-        public ImageData arrayLayers(int arrayLayers) {
+        public Builder arrayLayers(int arrayLayers) {
             this.arrayLayers = arrayLayers;
             return this;
         }
 
-        public ImageData format(int format) {
+        public Builder format(int format) {
             this.format = format;
             return this;
         }
 
-        public ImageData height(int height) {
+        public Builder height(int height) {
             this.height = height;
             return this;
         }
 
-        public ImageData mipLevels(int mipLevels) {
+        public Builder mipLevels(int mipLevels) {
             this.mipLevels = mipLevels;
             return this;
         }
 
-        public ImageData sampleCount(int sampleCount) {
+        public Builder sampleCount(int sampleCount) {
             this.sampleCount = sampleCount;
             return this;
         }
 
-        public ImageData usage(int usage) {
+        public Builder usage(int usage) {
             this.usage = usage;
             return this;
         }
 
-        public ImageData width(int width) {
+        public Builder width(int width) {
             this.width = width;
             return this;
         }
 
-        public ImageData properties(int properties) {
+        public Builder properties(int properties) {
             this.properties = properties;
             return this;
         }
 
-        public ImageData allocator(long vmaAllocator) {
+        public Builder allocator(long vmaAllocator) {
             this.vmaAllocator = vmaAllocator;
             return this;
         }
 
-        public ImageData pNext(Function<MemoryStack, Long> pNext) {
+        public Builder pNext(Function<MemoryStack, Long> pNext) {
             this.pNext = pNext;
             return this;
+        }
+
+        public Image build(Device device) {
+            return new Image(device, this);
         }
     }
 }

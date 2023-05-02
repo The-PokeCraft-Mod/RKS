@@ -19,7 +19,7 @@ public class ShadowsRenderPass {
         try (var stack = MemoryStack.stackPush()) {
             var attachmentsDesc = VkAttachmentDescription.calloc(1, stack);
             attachmentsDesc.get(0)
-                    .format(depthAttachment.getImage().getFormat())
+                    .format(depthAttachment.getImage().format)
                     .loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR)
                     .storeOp(VK_ATTACHMENT_STORE_OP_STORE)
                     .stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE)

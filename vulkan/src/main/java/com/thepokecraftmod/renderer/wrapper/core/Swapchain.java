@@ -164,8 +164,8 @@ public class Swapchain {
         VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, swapChainImages), "Failed to get surface images");
 
         result = new ImageView[numImages];
-        var imageViewData = new ImageView.ImageViewData().format(format).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-        for (var i = 0; i < numImages; i++) result[i] = new ImageView(device, swapChainImages.get(i), imageViewData);
+        var imageViewData = new ImageView.Builder().format(format).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+        for (var i = 0; i < numImages; i++) result[i] = imageViewData.build(device, swapChainImages.get(i));
 
         return result;
     }

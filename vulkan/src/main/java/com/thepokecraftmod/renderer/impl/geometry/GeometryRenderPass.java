@@ -13,18 +13,17 @@ import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 public class GeometryRenderPass {
     private static final int MAX_SAMPLES = 1;
     private final Device device;
-    private final long vkRenderPass;
+    private final long renderPass;
 
     public GeometryRenderPass(Device device, List<Attachment> attachments) {
         try (var stack = MemoryStack.stackPush()) {
             this.device = device;
-            var numAttachments = attachments.size();
-            var attachmentsDesc = VkAttachmentDescription.calloc(numAttachments, stack);
+            var attachmentsDesc = VkAttachmentDescription.calloc(attachments.size(), stack);
             var depthAttachmentPos = 0;
-            for (var i = 0; i < numAttachments; i++) {
+            for (var i = 0; i < attachments.size(); i++) {
                 var attachment = attachments.get(i);
                 attachmentsDesc.get(i)
-                        .format(attachment.getImage().getFormat())
+                        .format(attachment.getImage().format)
                         .loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR)
                         .storeOp(VK_ATTACHMENT_STORE_OP_STORE)
                         .stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE)
@@ -85,15 +84,15 @@ public class GeometryRenderPass {
             var lp = stack.mallocLong(1);
             ok(vkCreateRenderPass(device.vk(), renderPassInfo, null, lp),
                     "Failed to create render pass");
-            this.vkRenderPass = lp.get(0);
+            this.renderPass = lp.get(0);
         }
     }
 
     public void close() {
-        vkDestroyRenderPass(this.device.vk(), this.vkRenderPass, null);
+        vkDestroyRenderPass(this.device.vk(), this.renderPass, null);
     }
 
-    public long getVkRenderPass() {
-        return this.vkRenderPass;
+    public long vk() {
+        return this.renderPass;
     }
 }

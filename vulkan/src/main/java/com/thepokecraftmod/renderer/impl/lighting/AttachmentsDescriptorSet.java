@@ -57,7 +57,7 @@ public class AttachmentsDescriptorSet extends DescriptorSet {
                 var attachment = attachments.get(i);
                 var imageInfo = VkDescriptorImageInfo.calloc(1, stack)
                         .sampler(this.textureSampler.getVkSampler())
-                        .imageView(attachment.getImageView().getVkImageView());
+                        .imageView(attachment.getImageView().vk());
                 if (attachment.isDepthAttachment())
                     imageInfo.imageLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
                 else imageInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

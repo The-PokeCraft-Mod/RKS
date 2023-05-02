@@ -3,8 +3,8 @@ package com.thepokecraftmod.rks.util;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT;
-import com.thepokecraftmod.renderer.wrapper.image.Image;
 import com.thepokecraftmod.renderer.wrapper.core.VkBuffer;
+import com.thepokecraftmod.renderer.wrapper.image.Image;
 import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
@@ -46,22 +46,20 @@ public class InteropUtils {
         public int glObjectId;
 
         public Texture2DVkGL(Device device, int width, int height, int format, int usage, int properties, int mipLevels) {
-            this.image = new Image(
-                    device,
-                    new Image.ImageData()
-                            .format(format)
-                            .usage(usage)
-                            .mipLevels(mipLevels)
-                            .width(width)
-                            .height(height)
-                            .properties(properties)
-                            .pNext(stack -> VkExternalMemoryImageCreateInfo.calloc(stack)
-                                    .sType$Default()
-                                    .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT)
-                                    .address()
-                            )
-                            .allocator(device.sharedMemoryAllocator.vma())
-            );
+            this.image = new Image.Builder()
+                    .format(format)
+                    .usage(usage)
+                    .mipLevels(mipLevels)
+                    .width(width)
+                    .height(height)
+                    .properties(properties)
+                    .pNext(stack -> VkExternalMemoryImageCreateInfo.calloc(stack)
+                            .sType$Default()
+                            .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT)
+                            .address()
+                    )
+                    .allocator(device.sharedMemoryAllocator.vma())
+                    .build(device);
 
             this.mipLevels = mipLevels;
         }

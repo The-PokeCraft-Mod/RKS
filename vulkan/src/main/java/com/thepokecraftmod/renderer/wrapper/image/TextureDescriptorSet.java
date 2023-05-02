@@ -43,7 +43,7 @@ public class TextureDescriptorSet extends DescriptorSet {
                 var texture = textureList.get(i);
                 imageInfo.get(i)
                         .imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                        .imageView(texture.getImageView().getVkImageView())
+                        .imageView(texture.getImageView().vk())
                         .sampler(textureSampler.getVkSampler());
             }
 

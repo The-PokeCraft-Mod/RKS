@@ -38,11 +38,11 @@ public class GeometryFrameBuffer {
         try (var stack = MemoryStack.stackPush()) {
             var attachments = this.geometryAttachments.getAttachments();
             var attachmentsBuff = stack.mallocLong(attachments.size());
-            for (var attachment : attachments) attachmentsBuff.put(attachment.getImageView().getVkImageView());
+            for (var attachment : attachments) attachmentsBuff.put(attachment.getImageView().vk());
             attachmentsBuff.flip();
 
             this.frameBuffer = new FrameBuffer(swapChain.getDevice(), this.geometryAttachments.getWidth(), this.geometryAttachments.getHeight(),
-                    attachmentsBuff, this.geometryRenderPass.getVkRenderPass(), 1);
+                    attachmentsBuff, this.geometryRenderPass.vk(), 1);
         }
     }
 

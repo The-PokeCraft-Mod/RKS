@@ -1,102 +1,112 @@
 package com.thepokecraftmod.renderer.wrapper.image;
 
 import com.thepokecraftmod.renderer.wrapper.core.VkUtils;
+import com.thepokecraftmod.renderer.wrapper.core.VkWrapper;
 import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class ImageView {
+public class ImageView implements VkWrapper<Long> {
 
-    private final int aspectMask;
-    private final Device device;
-    private final int mipLevels;
-    private final long vkImageView;
+    public final int aspectMask;
+    public final Device device;
+    public final int mipLevels;
+    private final long imageView;
 
-    public ImageView(Device device, long vkImage, ImageViewData imageViewData) {
-        this.device = device;
-        this.aspectMask = imageViewData.aspectMask;
-        this.mipLevels = imageViewData.mipLevels;
+    private ImageView(Device device, long vkImage, Builder builder) {
         try (var stack = MemoryStack.stackPush()) {
-            var lp = stack.mallocLong(1);
-
-            var viewCreateInfo = VkImageViewCreateInfo.calloc(stack)
+            this.device = device;
+            this.aspectMask = builder.aspectMask;
+            this.mipLevels = builder.mipLevels;
+            var pImageView = stack.mallocLong(1);
+            var createInfo = VkImageViewCreateInfo.calloc(stack)
                     .sType$Default()
                     .image(vkImage)
-                    .viewType(imageViewData.viewType)
-                    .format(imageViewData.format)
+                    .viewType(builder.viewType)
+                    .format(builder.format)
                     .subresourceRange(it -> it
                             .aspectMask(this.aspectMask)
                             .baseMipLevel(0)
                             .levelCount(this.mipLevels)
-                            .baseArrayLayer(imageViewData.baseArrayLayer)
-                            .layerCount(imageViewData.layerCount));
+                            .baseArrayLayer(builder.baseArrayLayer)
+                            .layerCount(builder.layerCount));
 
-            VkUtils.ok(vkCreateImageView(device.vk(), viewCreateInfo, null, lp), "Failed to create image view");
-            this.vkImageView = lp.get(0);
+            VkUtils.ok(vkCreateImageView(device.vk(), createInfo, null, pImageView), "Failed to create image view");
+            this.imageView = pImageView.get(0);
         }
     }
 
+    @Override
     public void close() {
-        vkDestroyImageView(this.device.vk(), this.vkImageView, null);
+        vkDestroyImageView(device.vk(), imageView, null);
     }
 
-    public int getAspectMask() {
-        return this.aspectMask;
+    @Override
+    public Long vk() {
+        return imageView;
     }
 
-    public int getMipLevels() {
-        return this.mipLevels;
-    }
+    public static class Builder {
+        public int aspectMask;
+        public int baseArrayLayer;
+        public int format;
+        public int layerCount;
+        public int mipLevels;
+        public int viewType;
 
-    public long getVkImageView() {
-        return this.vkImageView;
-    }
-
-    public static class ImageViewData {
-        private int aspectMask;
-        private int baseArrayLayer;
-        private int format;
-        private int layerCount;
-        private int mipLevels;
-        private int viewType;
-
-        public ImageViewData() {
+        public Builder() {
             this.baseArrayLayer = 0;
             this.layerCount = 1;
             this.mipLevels = 1;
             this.viewType = VK_IMAGE_VIEW_TYPE_2D;
         }
 
-        public ImageViewData aspectMask(int aspectMask) {
+        public Builder aspectMask(int aspectMask) {
             this.aspectMask = aspectMask;
             return this;
         }
 
-        public ImageViewData baseArrayLayer(int baseArrayLayer) {
+        public Builder generateAspectMask(int usage) {
+            var aspectMask = 0;
+            if ((usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) > 0) aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            if ((usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) > 0) aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            this.aspectMask = aspectMask;
+            return this;
+        }
+
+        public Builder baseArrayLayer(int baseArrayLayer) {
             this.baseArrayLayer = baseArrayLayer;
             return this;
         }
 
-        public ImageViewData format(int format) {
+        public Builder format(int format) {
             this.format = format;
             return this;
         }
 
-        public ImageViewData layerCount(int layerCount) {
+        public Builder layerCount(int layerCount) {
             this.layerCount = layerCount;
             return this;
         }
 
-        public ImageViewData mipLevels(int mipLevels) {
+        public Builder mipLevels(int mipLevels) {
             this.mipLevels = mipLevels;
             return this;
         }
 
-        public ImageViewData viewType(int viewType) {
+        public Builder viewType(int viewType) {
             this.viewType = viewType;
             return this;
+        }
+
+        public ImageView build(Device device, Image image) {
+            return new ImageView(device, image.vk(), this);
+        }
+
+        public ImageView build(Device device, long image) {
+            return new ImageView(device, image, this);
         }
     }
 }
