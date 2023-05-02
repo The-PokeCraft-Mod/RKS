@@ -2,11 +2,11 @@ package com.thepokecraftmod.renderer.impl.shadows;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import com.thepokecraftmod.renderer.vk.Attachment;
-import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.wrapper.renderpass.Attachment;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 
 public class ShadowsRenderPass {
     private static final int MAX_SAMPLES = 1;

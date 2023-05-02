@@ -3,9 +3,9 @@ package com.thepokecraftmod.rks.util;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT;
-import com.thepokecraftmod.renderer.vk.Image;
-import com.thepokecraftmod.renderer.vk.VkBuffer;
-import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.wrapper.image.Image;
+import com.thepokecraftmod.renderer.wrapper.core.VkBuffer;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -14,7 +14,7 @@ import org.lwjgl.vulkan.*;
 
 import java.io.Closeable;
 
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 import static org.lwjgl.vulkan.VK10.vkGetBufferMemoryRequirements;
 import static org.lwjgl.vulkan.VK11.VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 import static org.lwjgl.vulkan.VK11.VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;

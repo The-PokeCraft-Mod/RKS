@@ -1,11 +1,16 @@
 package com.thepokecraftmod.renderer.impl.shadows;
 
-import com.thepokecraftmod.renderer.vk.init.Device;
+
+import com.thepokecraftmod.renderer.wrapper.core.VkConstants;
+import com.thepokecraftmod.renderer.wrapper.image.Image;
+import com.thepokecraftmod.renderer.wrapper.image.ImageView;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.renderpass.Attachment;
+import com.thepokecraftmod.renderer.wrapper.renderpass.FrameBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.thepokecraftmod.renderer.Settings;
-import com.thepokecraftmod.renderer.vk.*;
+import com.thepokecraftmod.renderer.wrapper.core.Settings;
 
 import static org.lwjgl.vulkan.VK11.*;
 

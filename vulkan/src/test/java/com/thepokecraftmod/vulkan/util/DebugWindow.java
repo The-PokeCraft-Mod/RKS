@@ -1,6 +1,5 @@
 package com.thepokecraftmod.vulkan.util;
 
-import com.thepokecraftmod.renderer.MouseInput;
 import com.thepokecraftmod.renderer.Window;
 import org.lwjgl.system.MemoryUtil;
 

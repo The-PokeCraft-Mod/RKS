@@ -1,7 +1,7 @@
 package com.thepokecraftmod.renderer.impl;
 
-import com.thepokecraftmod.renderer.vk.init.Device;
-import com.thepokecraftmod.renderer.vk.Texture;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.image.Texture;
 
 import java.awt.image.BufferedImage;
 import java.io.Closeable;

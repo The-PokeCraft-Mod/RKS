@@ -1,10 +1,10 @@
 package com.thepokecraftmod.vulkan.tests;
 
 import com.thepokecraftmod.renderer.Rks;
-import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.wrapper.core.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.scene.*;
-import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
+import com.thepokecraftmod.renderer.wrapper.init.ExtensionProvider;
 import com.thepokecraftmod.rks.ModelLocator;
 import com.thepokecraftmod.rks.assimp.AssimpModelLoader;
 import com.thepokecraftmod.rks.model.Model;

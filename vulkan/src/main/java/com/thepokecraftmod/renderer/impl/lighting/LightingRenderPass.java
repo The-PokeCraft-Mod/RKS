@@ -2,11 +2,11 @@ package com.thepokecraftmod.renderer.impl.lighting;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import com.thepokecraftmod.renderer.vk.init.Device;
-import com.thepokecraftmod.renderer.vk.Swapchain;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.core.Swapchain;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 
 public class LightingRenderPass {
 

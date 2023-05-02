@@ -2,7 +2,6 @@ package com.thepokecraftmod.rks.mixin;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.thepokecraftmod.renderer.vk.CmdBuffer;
 import com.thepokecraftmod.rks.CreeperReplacementTest;
 import com.thepokecraftmod.rks.util.InteropUtils;
 import org.lwjgl.opengl.GL11C;

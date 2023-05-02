@@ -3,13 +3,13 @@ package com.thepokecraftmod.renderer.impl.lighting;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutBinding;
 import org.lwjgl.vulkan.VkDescriptorSetLayoutCreateInfo;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
-import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 
 public class AttachmentsLayout extends DescriptorSetLayout {
     private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);

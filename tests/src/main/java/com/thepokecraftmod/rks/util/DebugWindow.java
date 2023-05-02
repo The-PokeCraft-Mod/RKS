@@ -1,6 +1,5 @@
 package com.thepokecraftmod.rks.util;
 
-import com.thepokecraftmod.renderer.MouseInput;
 import com.thepokecraftmod.renderer.Window;
 import org.lwjgl.system.MemoryUtil;
 
@@ -10,7 +9,6 @@ import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
 
 public class DebugWindow implements Window {
 
-    private final MouseInput mouseInput;
     private final long windowHandle;
     private int height;
     private boolean resized;
@@ -35,8 +33,6 @@ public class DebugWindow implements Window {
         glfwSetKeyCallback(this.windowHandle, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true);
         });
-
-        this.mouseInput = new MouseInput(this.windowHandle);
     }
 
     public void close() {
@@ -47,10 +43,6 @@ public class DebugWindow implements Window {
 
     public int getHeight() {
         return this.height;
-    }
-
-    public MouseInput getMouseInput() {
-        return this.mouseInput;
     }
 
     public int getWidth() {
@@ -75,7 +67,6 @@ public class DebugWindow implements Window {
 
     public void pollEvents() {
         glfwPollEvents();
-        this.mouseInput.input();
     }
 
     public void resetResized() {

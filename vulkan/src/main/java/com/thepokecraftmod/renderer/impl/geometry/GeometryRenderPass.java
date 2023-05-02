@@ -2,24 +2,22 @@ package com.thepokecraftmod.renderer.impl.geometry;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
-import com.thepokecraftmod.renderer.vk.Attachment;
-import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.wrapper.renderpass.Attachment;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
 
 import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 
 public class GeometryRenderPass {
-
     private static final int MAX_SAMPLES = 1;
-
     private final Device device;
     private final long vkRenderPass;
 
     public GeometryRenderPass(Device device, List<Attachment> attachments) {
-        this.device = device;
         try (var stack = MemoryStack.stackPush()) {
+            this.device = device;
             var numAttachments = attachments.size();
             var attachmentsDesc = VkAttachmentDescription.calloc(numAttachments, stack);
             var depthAttachmentPos = 0;

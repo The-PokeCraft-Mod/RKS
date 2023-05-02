@@ -7,8 +7,6 @@ public interface Window extends Closeable {
     @Override
     void close();
 
-    MouseInput getMouseInput();
-
     boolean shouldClose();
 
     void pollEvents();

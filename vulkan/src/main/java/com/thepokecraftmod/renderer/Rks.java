@@ -2,7 +2,7 @@ package com.thepokecraftmod.renderer;
 
 import com.thepokecraftmod.renderer.impl.Renderer;
 import com.thepokecraftmod.renderer.scene.Scene;
-import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
+import com.thepokecraftmod.renderer.wrapper.init.ExtensionProvider;
 
 import java.io.Closeable;
 

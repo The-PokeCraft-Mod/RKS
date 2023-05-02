@@ -1,16 +1,25 @@
 package com.thepokecraftmod.renderer.impl.animation;
 
 import com.thepokecraftmod.renderer.impl.ImplUtils;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
-import com.thepokecraftmod.renderer.vk.init.Device;
-import com.thepokecraftmod.renderer.vk.manager.PoolManager;
+import com.thepokecraftmod.renderer.wrapper.cmd.CmdBuffer;
+import com.thepokecraftmod.renderer.wrapper.cmd.CmdPool;
+import com.thepokecraftmod.renderer.wrapper.core.Fence;
+import com.thepokecraftmod.renderer.wrapper.core.Queue;
+import com.thepokecraftmod.renderer.wrapper.core.VkConstants;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.manager.PoolManager;
+import com.thepokecraftmod.renderer.wrapper.memory.MemoryBarrier;
+import com.thepokecraftmod.renderer.wrapper.pipeline.ComputePipeline;
+import com.thepokecraftmod.renderer.wrapper.pipeline.PipelineCache;
+import com.thepokecraftmod.renderer.wrapper.pipeline.ShaderProgram;
+import com.thepokecraftmod.renderer.wrapper.vertex.InstancedVertexBufferStructure;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.shaderc.Shaderc;
-import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.wrapper.core.Settings;
 import com.thepokecraftmod.renderer.impl.GlobalBuffers;
-import com.thepokecraftmod.renderer.vk.*;
 
 import java.util.List;
 

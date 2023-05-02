@@ -3,8 +3,8 @@ package com.thepokecraftmod.renderer.impl.geometry;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.thepokecraftmod.renderer.vk.FrameBuffer;
-import com.thepokecraftmod.renderer.vk.Swapchain;
+import com.thepokecraftmod.renderer.wrapper.renderpass.FrameBuffer;
+import com.thepokecraftmod.renderer.wrapper.core.Swapchain;
 
 public class GeometryFrameBuffer {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeometryFrameBuffer.class);

@@ -1,12 +1,12 @@
 package com.thepokecraftmod.rks;
 
 import com.thepokecraftmod.renderer.Rks;
-import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.wrapper.core.Settings;
 import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.impl.Renderer;
 import com.thepokecraftmod.renderer.scene.*;
-import com.thepokecraftmod.renderer.vk.init.Device;
-import com.thepokecraftmod.renderer.vk.init.ExtensionProvider;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.init.ExtensionProvider;
 import com.thepokecraftmod.rks.assimp.AssimpModelLoader;
 import com.thepokecraftmod.rks.model.Model;
 import com.thepokecraftmod.rks.model.animation.Animation;

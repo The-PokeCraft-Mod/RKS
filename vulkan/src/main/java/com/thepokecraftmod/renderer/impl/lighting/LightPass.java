@@ -2,14 +2,22 @@ package com.thepokecraftmod.renderer.impl.lighting;
 
 import com.thepokecraftmod.renderer.impl.ImplUtils;
 import com.thepokecraftmod.renderer.impl.shadows.CascadeShadow;
+
 import com.thepokecraftmod.renderer.scene.Light;
 import com.thepokecraftmod.renderer.scene.Scene;
-import com.thepokecraftmod.renderer.vk.*;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
-import com.thepokecraftmod.renderer.vk.init.Device;
-import com.thepokecraftmod.renderer.vk.manager.PoolManager;
+import com.thepokecraftmod.renderer.wrapper.cmd.CmdBuffer;
+import com.thepokecraftmod.renderer.wrapper.cmd.CmdPool;
+import com.thepokecraftmod.renderer.wrapper.core.*;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorSetLayout;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.manager.PoolManager;
+import com.thepokecraftmod.renderer.wrapper.pipeline.ShaderProgram;
+import com.thepokecraftmod.renderer.wrapper.pipeline.ShaderConstants;
+import com.thepokecraftmod.renderer.wrapper.renderpass.Attachment;
+import com.thepokecraftmod.renderer.wrapper.pipeline.Pipeline;
+import com.thepokecraftmod.renderer.wrapper.pipeline.PipelineCache;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
@@ -33,7 +41,7 @@ public class LightPass {
 
     private final Vector4f auxVec;
     private final Device device;
-    private final LightSettingsUploader lightSettingsUploader;
+    private final ShaderConstants constants;
     private final LightingFrameBuffer lightingFrameBuffer;
     private final Scene scene;
 
@@ -60,7 +68,13 @@ public class LightPass {
         this.scene = scene;
         this.device = swapChain.getDevice();
         this.auxVec = new Vector4f();
-        this.lightSettingsUploader = new LightSettingsUploader();
+        this.constants = new ShaderConstants.Builder()
+                .entry(Integer.BYTES, data -> data.putInt(VkConstants.MAX_LIGHTS))
+                .entry(Integer.BYTES, data -> data.putInt(VkConstants.SHADOW_MAP_CASCADE_COUNT))
+                .entry(Integer.BYTES, data -> data.putInt(1))
+                .entry(Float.BYTES, data -> data.putFloat(Settings.getInstance().getShadowBias()))
+                .entry(Integer.BYTES, data -> data.putInt(Settings.getInstance().isShadowDebug() ? 1 : 0))
+                .build();
 
         this.lightingFrameBuffer = new LightingFrameBuffer(swapChain);
         var numImages = swapChain.getImageCount();
@@ -97,7 +111,7 @@ public class LightPass {
         this.pools.close();
         Arrays.stream(this.lightsBuffers).forEach(VkBuffer::close);
         this.pipeline.close();
-        this.lightSettingsUploader.close();
+        this.constants.close();
         Arrays.stream(this.invMatricesBuffers).forEach(VkBuffer::close);
         this.lightingFrameBuffer.close();
         Arrays.stream(this.shadowsMatricesBuffers).forEach(VkBuffer::close);
@@ -157,7 +171,7 @@ public class LightPass {
     private void createShaders() {
         this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderData[]{
                 new ShaderProgram.ShaderData(VK_SHADER_STAGE_VERTEX_BIT, ImplUtils.get(LIGHTING_VERTEX_SHADER_FILE_SPV)),
-                new ShaderProgram.ShaderData(VK_SHADER_STAGE_FRAGMENT_BIT, ImplUtils.get(LIGHTING_FRAGMENT_SHADER_FILE_SPV), this.lightSettingsUploader.specInfo),
+                new ShaderProgram.ShaderData(VK_SHADER_STAGE_FRAGMENT_BIT, ImplUtils.get(LIGHTING_FRAGMENT_SHADER_FILE_SPV), this.constants),
         });
     }
 

@@ -1,7 +1,7 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
 import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
-import com.thepokecraftmod.renderer.vk.VertexInputStateInfo;
+import com.thepokecraftmod.renderer.wrapper.vertex.VertexInputStateInfo;
 
 public class EmptyVertexBufferStructure extends VertexInputStateInfo {
 

@@ -1,7 +1,6 @@
 package com.thepokecraftmod.renderer.scene;
 
 import org.joml.Matrix4f;
-import com.thepokecraftmod.renderer.Settings;
 
 public class Projection {
 

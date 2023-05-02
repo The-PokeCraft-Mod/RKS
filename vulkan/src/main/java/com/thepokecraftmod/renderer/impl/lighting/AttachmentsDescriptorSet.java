@@ -1,18 +1,19 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
-import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
-import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.wrapper.renderpass.Attachment;
+import com.thepokecraftmod.renderer.wrapper.image.TextureSampler;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorPool;
+import com.thepokecraftmod.renderer.wrapper.descriptor.DescriptorSet;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkDescriptorSetAllocateInfo;
 import org.lwjgl.vulkan.VkWriteDescriptorSet;
-import com.thepokecraftmod.renderer.vk.*;
 
 import java.util.List;
 
 import static org.lwjgl.vulkan.VK11.*;
-import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
+import static com.thepokecraftmod.renderer.wrapper.core.VkUtils.ok;
 
 public class AttachmentsDescriptorSet extends DescriptorSet {
 

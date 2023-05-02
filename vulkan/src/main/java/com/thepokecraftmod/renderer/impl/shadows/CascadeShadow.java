@@ -4,7 +4,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import com.thepokecraftmod.renderer.scene.Scene;
-import com.thepokecraftmod.renderer.vk.VkConstants;
+import com.thepokecraftmod.renderer.wrapper.core.VkConstants;
 
 import java.util.List;
 

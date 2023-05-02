@@ -1,8 +1,8 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
 import org.lwjgl.system.MemoryStack;
-import com.thepokecraftmod.renderer.vk.FrameBuffer;
-import com.thepokecraftmod.renderer.vk.Swapchain;
+import com.thepokecraftmod.renderer.wrapper.renderpass.FrameBuffer;
+import com.thepokecraftmod.renderer.wrapper.core.Swapchain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

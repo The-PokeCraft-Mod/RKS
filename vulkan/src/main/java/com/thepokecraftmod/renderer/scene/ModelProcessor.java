@@ -1,6 +1,6 @@
 package com.thepokecraftmod.renderer.scene;
 
-import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.wrapper.core.Settings;
 import com.thepokecraftmod.rks.ModelLocator;
 import com.thepokecraftmod.rks.Pair;
 import com.thepokecraftmod.rks.model.Mesh;
@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.thepokecraftmod.renderer.EngineUtils.listFloatToArray;
-import static com.thepokecraftmod.renderer.EngineUtils.listIntToArray;
+import static com.thepokecraftmod.renderer.wrapper.core.DataUtils.toPrimitiveFloatArr;
+import static com.thepokecraftmod.renderer.wrapper.core.DataUtils.toPrimitiveIntArr;
 
 /**
  * Handles processing a model loaded from rks modelLoader into a format the renderer understands
@@ -109,7 +109,7 @@ public class ModelProcessor {
                 }
         }
 
-        return new ModelData.AnimMeshData(listFloatToArray(weights), listIntToArray(boneIds));
+        return new ModelData.AnimMeshData(toPrimitiveFloatArr(weights), toPrimitiveIntArr(boneIds));
     }
 
     private static ModelData.Material processMaterial(Material material) {
@@ -138,12 +138,12 @@ public class ModelProcessor {
         }
 
         return new ModelData.MeshData(
-                listFloatToArray(vertices),
-                listFloatToArray(normals),
-                listFloatToArray(tangents),
-                listFloatToArray(biTangents),
-                listFloatToArray(textCoords),
-                listIntToArray(indices),
+                toPrimitiveFloatArr(vertices),
+                toPrimitiveFloatArr(normals),
+                toPrimitiveFloatArr(tangents),
+                toPrimitiveFloatArr(biTangents),
+                toPrimitiveFloatArr(textCoords),
+                toPrimitiveIntArr(indices),
                 mesh.material()
         );
     }

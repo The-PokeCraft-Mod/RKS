@@ -1,10 +1,16 @@
 package com.thepokecraftmod.renderer.impl;
 
-import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.wrapper.core.Settings;
 import com.thepokecraftmod.renderer.scene.ModelData;
 import com.thepokecraftmod.renderer.scene.Scene;
-import com.thepokecraftmod.renderer.vk.*;
-import com.thepokecraftmod.renderer.vk.init.Device;
+import com.thepokecraftmod.renderer.wrapper.cmd.CmdBuffer;
+import com.thepokecraftmod.renderer.wrapper.cmd.CmdPool;
+import com.thepokecraftmod.renderer.wrapper.core.Queue;
+import com.thepokecraftmod.renderer.wrapper.core.VkBuffer;
+import com.thepokecraftmod.renderer.wrapper.core.VkConstants;
+import com.thepokecraftmod.renderer.wrapper.image.Texture;
+import com.thepokecraftmod.renderer.wrapper.init.Device;
+import com.thepokecraftmod.renderer.wrapper.vertex.VertexBufferStructure;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkBufferCopy;
