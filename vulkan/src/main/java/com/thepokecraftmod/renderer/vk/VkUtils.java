@@ -1,8 +1,6 @@
 package com.thepokecraftmod.renderer.vk;
 
-import com.thepokecraftmod.renderer.vk.init.PhysicalDevice;
 import org.joml.Matrix4f;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
@@ -23,28 +21,6 @@ public class VkUtils {
         var matrixBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) vkBuffer.getRequestedSize());
         matrix.get(offset, matrixBuffer);
         vkBuffer.unMap();
-    }
-
-    public static int memoryTypeFromProperties(PhysicalDevice physDevice, int typeBits, int reqsMask) {
-        var result = -1;
-        var memoryTypes = physDevice.getVkMemoryProperties().memoryTypes();
-        for (var i = 0; i < VK_MAX_MEMORY_TYPES; i++) {
-            if ((typeBits & 1) == 1 && (memoryTypes.get(i).propertyFlags() & reqsMask) == reqsMask) {
-                result = i;
-                break;
-            }
-            typeBits >>= 1;
-        }
-        if (result < 0) throw new RuntimeException("Failed to find memoryType");
-        return result;
-    }
-
-    public static void setMatrixAsPushConstant(Pipeline pipeLine, VkCommandBuffer cmdHandle, Matrix4f matrix) {
-        try (var stack = MemoryStack.stackPush()) {
-            var pushConstantBuffer = stack.malloc(VkConstants.MAT4X4_SIZE);
-            matrix.get(0, pushConstantBuffer);
-            vkCmdPushConstants(cmdHandle, pipeLine.getVkPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, pushConstantBuffer);
-        }
     }
 
     /**

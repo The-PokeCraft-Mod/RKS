@@ -32,7 +32,7 @@ public class LightingFrameBuffer {
             var width = extent2D.width();
             var height = extent2D.height();
 
-            var numImages = swapChain.getNumImages();
+            var numImages = swapChain.getImageCount();
             this.frameBuffers = new FrameBuffer[numImages];
             var attachmentsBuff = stack.mallocLong(1);
             for (var i = 0; i < numImages; i++) {

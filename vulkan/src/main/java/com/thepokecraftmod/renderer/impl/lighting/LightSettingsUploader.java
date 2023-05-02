@@ -12,7 +12,7 @@ public class LightSettingsUploader {
 
     private final ByteBuffer data;
     private final VkSpecializationMapEntry.Buffer specEntryMap;
-    private final VkSpecializationInfo specInfo;
+    public final VkSpecializationInfo specInfo;
 
     public LightSettingsUploader() {
         var settings = Settings.getInstance();
@@ -55,9 +55,5 @@ public class LightSettingsUploader {
         MemoryUtil.memFree(this.specEntryMap);
         this.specInfo.free();
         MemoryUtil.memFree(this.data);
-    }
-
-    public VkSpecializationInfo getSpecInfo() {
-        return this.specInfo;
     }
 }

@@ -9,21 +9,21 @@ import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class Pipeline {
+public class Pipeline implements VkWrapper<Long> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Pipeline.class);
-    private final Device device;
-    private final long vkPipeline;
-    private final long vkPipelineLayout;
+    public final Device device;
+    private final long pipeline;
+    public final long layout;
 
     public Pipeline(PipelineCache pipelineCache, PipeLineCreationInfo pipeLineCreationInfo) {
-        LOGGER.info("Creating pipeline");
-        this.device = pipelineCache.getDevice();
         try (var stack = MemoryStack.stackPush()) {
+            LOGGER.info("Creating pipeline");
+            this.device = pipelineCache.getDevice();
             var lp = stack.mallocLong(1);
 
             var main = stack.UTF8("main");
 
-            var shaderModules = pipeLineCreationInfo.shaderProgram.getShaderModules();
+            var shaderModules = pipeLineCreationInfo.shaderProgram.shaderModules;
             var numModules = shaderModules.length;
             var shaderStages = VkPipelineShaderStageCreateInfo.calloc(numModules, stack);
             for (var i = 0; i < numModules; i++) {
@@ -113,7 +113,7 @@ public class Pipeline {
 
             VkUtils.ok(vkCreatePipelineLayout(this.device.vk(), pPipelineLayoutCreateInfo, null, lp),
                     "Failed to create pipeline layout");
-            this.vkPipelineLayout = lp.get(0);
+            this.layout = lp.get(0);
 
             var pipeline = VkGraphicsPipelineCreateInfo.calloc(1, stack)
                     .sType$Default()
@@ -125,29 +125,27 @@ public class Pipeline {
                     .pMultisampleState(vkPipelineMultisampleStateCreateInfo)
                     .pColorBlendState(colorBlendState)
                     .pDynamicState(vkPipelineDynamicStateCreateInfo)
-                    .layout(this.vkPipelineLayout)
+                    .layout(this.layout)
                     .renderPass(pipeLineCreationInfo.vkRenderPass);
             if (ds != null) pipeline.pDepthStencilState(ds);
-            VkUtils.ok(vkCreateGraphicsPipelines(this.device.vk(), pipelineCache.getVkPipelineCache(), pipeline, null, lp),
+            VkUtils.ok(vkCreateGraphicsPipelines(this.device.vk(), pipelineCache.vk(), pipeline, null, lp),
                     "Error creating graphics pipeline");
-            this.vkPipeline = lp.get(0);
+            this.pipeline = lp.get(0);
         }
     }
 
     public void close() {
         LOGGER.info("Closing pipeline");
-        vkDestroyPipelineLayout(this.device.vk(), this.vkPipelineLayout, null);
-        vkDestroyPipeline(this.device.vk(), this.vkPipeline, null);
+        vkDestroyPipelineLayout(this.device.vk(), this.layout, null);
+        vkDestroyPipeline(this.device.vk(), this.pipeline, null);
     }
 
-    public long getVkPipeline() {
-        return this.vkPipeline;
+    @Override
+    public Long vk() {
+        return pipeline;
     }
 
-    public long getVkPipelineLayout() {
-        return this.vkPipelineLayout;
-    }
-
+    // TODO: Builder
     public record PipeLineCreationInfo(long vkRenderPass, ShaderProgram shaderProgram, int numColorAttachments,
                                        boolean hasDepthAttachment, boolean useBlend,
                                        int pushConstantsSize, VertexInputStateInfo viInputStateInfo,

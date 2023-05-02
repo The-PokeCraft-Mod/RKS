@@ -44,11 +44,7 @@ public class CmdBuffer implements VkWrapper<VkCommandBuffer> {
         var cleanupTask = runnable == null ? null : runnable.get();
         endRecording();
         if (cleanupTask != null) cleanupTask.run();
-
-        if (submitAndClose) {
-            submitWaitAndClose(queue);
-            close();
-        }
+        if (submitAndClose) submitWaitAndClose(queue);
     }
 
     public void beginRecording() {
@@ -86,7 +82,6 @@ public class CmdBuffer implements VkWrapper<VkCommandBuffer> {
             queue.submit(stack.pointers(this.cmdBuffer), null, null, null, fence);
             fence.waitForFence();
             fence.close();
-            close();
         }
     }
 

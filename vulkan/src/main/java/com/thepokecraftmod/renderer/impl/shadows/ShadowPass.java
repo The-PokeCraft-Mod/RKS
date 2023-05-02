@@ -1,21 +1,21 @@
 package com.thepokecraftmod.renderer.impl.shadows;
 
+import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.impl.GlobalBuffers;
+import com.thepokecraftmod.renderer.impl.ImplUtils;
+import com.thepokecraftmod.renderer.impl.geometry.GeometryAttachments;
+import com.thepokecraftmod.renderer.scene.Scene;
+import com.thepokecraftmod.renderer.vk.*;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
 import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.shaderc.Shaderc;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
 import org.lwjgl.vulkan.VkViewport;
-import com.thepokecraftmod.renderer.Settings;
-import com.thepokecraftmod.renderer.impl.GlobalBuffers;
-import com.thepokecraftmod.renderer.impl.geometry.GeometryAttachments;
-import com.thepokecraftmod.renderer.scene.Scene;
-import com.thepokecraftmod.renderer.vk.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +37,7 @@ public class ShadowPass {
     private List<CascadeShadow> cascadeShadows;
     private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
-    private Pipeline pipeLine;
+    private Pipeline pipeline;
     private DescriptorSet.UniformDescriptorSet[] projMatrixDescriptorSet;
     private ShaderProgram shaderProgram;
     private VkBuffer[] shadowsUniforms;
@@ -48,17 +48,16 @@ public class ShadowPass {
         this.swapChain = swapChain;
         this.scene = scene;
         this.device = swapChain.getDevice();
-        var numImages = swapChain.getNumImages();
         this.shadowsFrameBuffer = new ShadowsFrameBuffer(this.device);
         createShaders();
-        createDescriptorPool(numImages);
-        createDescriptorSets(numImages);
+        createDescriptorPool(swapChain.getImageCount());
+        createDescriptorSets(swapChain.getImageCount());
         createPipeline(pipelineCache);
         createShadowCascades();
     }
 
     public void close() {
-        this.pipeLine.close();
+        this.pipeline.close();
         Arrays.stream(this.shadowsUniforms).forEach(VkBuffer::close);
         this.uniformDescriptorSetLayout.close();
         this.pools.close();
@@ -91,28 +90,19 @@ public class ShadowPass {
                 this.shadowsFrameBuffer.getRenderPass().getVkRenderPass(), this.shaderProgram,
                 GeometryAttachments.NUMBER_COLOR_ATTACHMENTS, true, true, 0,
                 new InstancedVertexBufferStructure(), this.descriptorSetLayouts);
-        this.pipeLine = new Pipeline(pipelineCache, pipeLineCreationInfo);
+        this.pipeline = new Pipeline(pipelineCache, pipeLineCreationInfo);
     }
 
     private void createShaders() {
-        var settings = Settings.getInstance();
-        if (settings.isShaderRecompilation()) {
-            ShaderCompiler.compileShaderIfChanged(SHADOW_VERTEX_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_vertex_shader);
-            ShaderCompiler.compileShaderIfChanged(SHADOW_GEOMETRY_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_geometry_shader);
-        }
-        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderModuleData[]
-                {
-                        new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_VERTEX_BIT, SHADOW_VERTEX_SHADER_FILE_SPV),
-                        new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_GEOMETRY_BIT, SHADOW_GEOMETRY_SHADER_FILE_SPV),
-                });
+        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderData[]{
+                new ShaderProgram.ShaderData(VK_SHADER_STAGE_VERTEX_BIT, ImplUtils.get(SHADOW_VERTEX_SHADER_FILE_SPV)),
+                new ShaderProgram.ShaderData(VK_SHADER_STAGE_GEOMETRY_BIT, ImplUtils.get(SHADOW_GEOMETRY_SHADER_FILE_SPV)),
+        });
     }
 
     private void createShadowCascades() {
         this.cascadeShadows = new ArrayList<>();
-        for (var i = 0; i < VkConstants.SHADOW_MAP_CASCADE_COUNT; i++) {
-            var cascadeShadow = new CascadeShadow();
-            this.cascadeShadows.add(cascadeShadow);
-        }
+        for (var i = 0; i < VkConstants.SHADOW_MAP_CASCADE_COUNT; i++) this.cascadeShadows.add(new CascadeShadow());
     }
 
     public Attachment getDepthAttachment() {
@@ -162,12 +152,12 @@ public class ShadowPass {
 
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipeline());
+            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.vk());
 
             var descriptorSets = stack.mallocLong(1)
                     .put(0, this.projMatrixDescriptorSet[idx].vk());
 
-            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);
+            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.layout, 0, descriptorSets, null);
 
             var vertexBuffer = stack.mallocLong(1);
             var instanceBuffer = stack.mallocLong(1);

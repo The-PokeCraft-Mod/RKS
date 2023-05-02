@@ -1,12 +1,12 @@
 package com.thepokecraftmod.renderer.impl.geometry;
 
+import com.thepokecraftmod.renderer.impl.ImplUtils;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
 import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.manager.PoolManager;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.shaderc.Shaderc;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
@@ -62,7 +62,7 @@ public class GeometryPass implements Closeable {
         this.geometrySpecConstants = new GeometrySpecConstants();
 
         this.geometryFrameBuffer = new GeometryFrameBuffer(swapChain);
-        var numImages = swapChain.getNumImages();
+        var numImages = swapChain.getImageCount();
         createShaders();
         createDescriptorPool();
         createDescriptorSets(numImages, globalBuffers);
@@ -89,7 +89,7 @@ public class GeometryPass implements Closeable {
     private void createDescriptorPool() {
         var engineProps = Settings.getInstance();
         List<DescriptorPool.DescriptorTypeCount> descriptorTypeCounts = new ArrayList<>();
-        descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(this.swapChain.getNumImages() + 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+        descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(this.swapChain.getImageCount() + 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(engineProps.getMaxMaterials() * 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC));
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
@@ -124,12 +124,7 @@ public class GeometryPass implements Closeable {
     }
 
     private void createShaders() {
-        var settings = Settings.getInstance();
-        if (settings.isShaderRecompilation()) {
-            ShaderCompiler.compileShaderIfChanged(GEOMETRY_VERTEX_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_vertex_shader);
-            ShaderCompiler.compileShaderIfChanged(GEOMETRY_FRAGMENT_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_fragment_shader);
-        }
-        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderModuleData[]{new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_VERTEX_BIT, GEOMETRY_VERTEX_SHADER_FILE_SPV), new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_FRAGMENT_BIT, GEOMETRY_FRAGMENT_SHADER_FILE_SPV, this.geometrySpecConstants.getSpecInfo()),});
+        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderData[]{new ShaderProgram.ShaderData(VK_SHADER_STAGE_VERTEX_BIT, ImplUtils.get(GEOMETRY_VERTEX_SHADER_FILE_SPV)), new ShaderProgram.ShaderData(VK_SHADER_STAGE_FRAGMENT_BIT, ImplUtils.get(GEOMETRY_FRAGMENT_SHADER_FILE_SPV), this.geometrySpecConstants.getSpecInfo()),});
     }
 
     public List<Attachment> getAttachments() {
@@ -167,9 +162,9 @@ public class GeometryPass implements Closeable {
             var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack).sType$Default().renderPass(this.geometryFrameBuffer.getRenderPass().getVkRenderPass()).pClearValues(clearValues).renderArea(a -> a.extent().set(width, height)).framebuffer(frameBuffer.vk());
             var cmdHandle = cmdBuffer.vk();
 
-            vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
+            vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, this.memoryBarrier.vk(), null, null);
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipeline());
+            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.vk());
 
             var viewport = VkViewport.calloc(1, stack)
                     .x(0)
@@ -195,7 +190,7 @@ public class GeometryPass implements Closeable {
                     .put(2, this.materialsDescriptorSet.vk())
                     .put(3, this.textureDescriptorSet.vk());
 
-            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);
+            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.layout, 0, descriptorSets, null);
 
             var vertexBuffer = stack.mallocLong(1);
             var instanceBuffer = stack.mallocLong(1);

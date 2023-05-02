@@ -2,18 +2,21 @@ package com.thepokecraftmod.renderer.vk;
 
 import org.lwjgl.vulkan.VkMemoryBarrier;
 
-public class MemoryBarrier {
+public class MemoryBarrier implements VkWrapper<VkMemoryBarrier.Buffer> {
 
-    private final VkMemoryBarrier.Buffer vkMemoryBarrier;
+    private final VkMemoryBarrier.Buffer memoryBarrier;
 
     public MemoryBarrier(int srcAccessMask, int dstAccessMask) {
-        this.vkMemoryBarrier = VkMemoryBarrier.calloc(1)
+        this.memoryBarrier = VkMemoryBarrier.calloc(1)
                 .sType$Default()
                 .srcAccessMask(srcAccessMask)
                 .dstAccessMask(dstAccessMask);
     }
 
-    public VkMemoryBarrier.Buffer getVkMemoryBarrier() {
-        return this.vkMemoryBarrier;
+    @Override
+    public void close() {}
+
+    public VkMemoryBarrier.Buffer vk() {
+        return this.memoryBarrier;
     }
 }

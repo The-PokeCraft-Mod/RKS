@@ -1,4 +1,4 @@
-package com.thepokecraftmod.renderer.vk;
+package com.thepokecraftmod.renderer.impl;
 
 import org.lwjgl.util.shaderc.Shaderc;
 
@@ -8,10 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
 
-public class ShaderCompiler {
+/**
+ * ImplDetailsWhichNeedMovingOut
+ */
+public class ImplUtils {
 
-    private ShaderCompiler() {
-        // Utility class
+    public static byte[] get(String location) {
+        try {
+            return Files.readAllBytes(Paths.get("shaders/" + location));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to get shader", e);
+        }
     }
 
     public static byte[] compileShader(String shaderCode, int shaderType) {
@@ -52,7 +59,7 @@ public class ShaderCompiler {
             var compiledFile = Paths.get("shaders/" + glsShaderFile + ".spv");
 
             if (!Files.exists(compiledFile)) {
-                var compiledShader = compileShader(new String(Objects.requireNonNull(ShaderCompiler.class.getResourceAsStream("/shaders/" + glsShaderFile), glsShaderFile).readAllBytes(), StandardCharsets.UTF_8), shaderType);
+                var compiledShader = compileShader(new String(Objects.requireNonNull(ImplUtils.class.getResourceAsStream("/shaders/" + glsShaderFile), glsShaderFile).readAllBytes(), StandardCharsets.UTF_8), shaderType);
                 Files.write(compiledFile, compiledShader);
             }
         } catch (IOException e) {

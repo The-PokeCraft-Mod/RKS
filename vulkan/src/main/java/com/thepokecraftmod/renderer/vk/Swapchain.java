@@ -180,7 +180,7 @@ public class Swapchain {
         return this.imageViews;
     }
 
-    public int getNumImages() {
+    public int getImageCount() {
         return this.imageViews.length;
     }
 

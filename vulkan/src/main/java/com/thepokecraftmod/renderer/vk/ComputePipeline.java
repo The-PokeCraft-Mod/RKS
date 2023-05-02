@@ -12,22 +12,22 @@ import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class ComputePipeline {
+public class ComputePipeline implements VkWrapper<Long> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);
-    private final Device device;
-    private final long vkPipeline;
-    private final long vkPipelineLayout;
+    public final Device device;
+    private final long pipeline;
+    public final long layout;
 
-    public ComputePipeline(PipelineCache pipelineCache, PipeLineCreationInfo pipeLineCreationInfo) {
+    public ComputePipeline(PipelineCache pipelineCache, PipelineCreationInfo creationInfo) {
         try (var stack = MemoryStack.stackPush()) {
             LOGGER.info("Creating compute pipeline");
             this.device = pipelineCache.getDevice();
             var lp = stack.callocLong(1);
             var main = stack.UTF8("main");
 
-            var shaderModules = pipeLineCreationInfo.shaderProgram.getShaderModules();
-            var numModules = shaderModules != null ? shaderModules.length : 0;
-            if (numModules != 1) throw new RuntimeException("Compute pipelines can have only one shader");
+            var shaderModules = creationInfo.shaderProgram.shaderModules;
+            var moduleCount = shaderModules != null ? shaderModules.length : 0;
+            if (moduleCount != 1) throw new RuntimeException("Compute pipelines can have only one shader");
             var shaderModule = shaderModules[0];
             var shaderStage = VkPipelineShaderStageCreateInfo.calloc(stack)
                     .sType$Default()
@@ -36,12 +36,12 @@ public class ComputePipeline {
                     .pName(main);
 
             VkPushConstantRange.Buffer pushConstantRanges = null;
-            if (pipeLineCreationInfo.pushConstantsSize() > 0) pushConstantRanges = VkPushConstantRange.calloc(1, stack)
+            if (creationInfo.pushConstantsSize() > 0) pushConstantRanges = VkPushConstantRange.calloc(1, stack)
                     .stageFlags(VK_SHADER_STAGE_COMPUTE_BIT)
                     .offset(0)
-                    .size(pipeLineCreationInfo.pushConstantsSize());
+                    .size(creationInfo.pushConstantsSize());
 
-            var descriptorSetLayouts = pipeLineCreationInfo.descriptorSetLayouts();
+            var descriptorSetLayouts = creationInfo.descriptorSetLayouts();
             var numLayouts = descriptorSetLayouts != null ? descriptorSetLayouts.length : 0;
             var ppLayout = stack.mallocLong(numLayouts);
             for (var i = 0; i < numLayouts; i++) ppLayout.put(i, descriptorSetLayouts[i].vk());
@@ -49,34 +49,34 @@ public class ComputePipeline {
                     .sType$Default()
                     .pSetLayouts(ppLayout)
                     .pPushConstantRanges(pushConstantRanges);
-            VkUtils.ok(vkCreatePipelineLayout(this.device.vk(), pPipelineLayoutCreateInfo, null, lp),
-                    "Failed to create pipeline layout");
-            this.vkPipelineLayout = lp.get(0);
+            VkUtils.ok(vkCreatePipelineLayout(this.device.vk(), pPipelineLayoutCreateInfo, null, lp), "Failed to create pipeline layout");
+            this.layout = lp.get(0);
 
-            var computePipelineCreateInfo = VkComputePipelineCreateInfo.calloc(1, stack)
+            var computeCreateInfo = VkComputePipelineCreateInfo.calloc(1, stack)
                     .sType$Default()
                     .stage(shaderStage)
-                    .layout(this.vkPipelineLayout);
-            VkUtils.ok(vkCreateComputePipelines(this.device.vk(), pipelineCache.getVkPipelineCache(), computePipelineCreateInfo, null, lp), "Error creating compute pipeline");
-            this.vkPipeline = lp.get(0);
+                    .layout(this.layout);
+            VkUtils.ok(vkCreateComputePipelines(this.device.vk(), pipelineCache.vk(), computeCreateInfo, null, lp), "Error creating compute pipeline");
+            this.pipeline = lp.get(0);
         }
     }
 
+    @Override
     public void close() {
-        LOGGER.info("Closing compute pipeline");
-        vkDestroyPipelineLayout(this.device.vk(), this.vkPipelineLayout, null);
-        vkDestroyPipeline(this.device.vk(), this.vkPipeline, null);
+        LOGGER.info("Closing ComputePipeline");
+        vkDestroyPipelineLayout(device.vk(), layout, null);
+        vkDestroyPipeline(device.vk(), pipeline, null);
     }
 
-    public long getVkPipeline() {
-        return this.vkPipeline;
+    @Override
+    public Long vk() {
+        return pipeline;
     }
 
-    public long getVkPipelineLayout() {
-        return this.vkPipelineLayout;
-    }
-
-    public record PipeLineCreationInfo(ShaderProgram shaderProgram, DescriptorSetLayout[] descriptorSetLayouts,
-                                       int pushConstantsSize) {
+    public record PipelineCreationInfo(
+            ShaderProgram shaderProgram,
+            DescriptorSetLayout[] descriptorSetLayouts,
+            int pushConstantsSize
+    ) {
     }
 }

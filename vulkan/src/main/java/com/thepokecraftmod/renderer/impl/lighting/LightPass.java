@@ -1,6 +1,6 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
-import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.impl.ImplUtils;
 import com.thepokecraftmod.renderer.impl.shadows.CascadeShadow;
 import com.thepokecraftmod.renderer.scene.Light;
 import com.thepokecraftmod.renderer.scene.Scene;
@@ -14,7 +14,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.shaderc.Shaderc;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
@@ -64,7 +63,7 @@ public class LightPass {
         this.lightSettingsUploader = new LightSettingsUploader();
 
         this.lightingFrameBuffer = new LightingFrameBuffer(swapChain);
-        var numImages = swapChain.getNumImages();
+        var numImages = swapChain.getImageCount();
         createShaders();
         createDescriptorPool(attachments);
         createUniforms(numImages);
@@ -120,7 +119,7 @@ public class LightPass {
     private void createDescriptorPool(List<Attachment> attachments) {
         List<DescriptorPool.DescriptorTypeCount> descriptorTypeCounts = new ArrayList<>();
         descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(attachments.size(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
-        descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(this.swapChain.getNumImages() * 3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+        descriptorTypeCounts.add(new DescriptorPool.DescriptorTypeCount(this.swapChain.getImageCount() * 3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
         this.pools = new PoolManager(this.device, descriptorTypeCounts);
     }
 
@@ -156,17 +155,10 @@ public class LightPass {
     }
 
     private void createShaders() {
-        var settings = Settings.getInstance();
-        if (settings.isShaderRecompilation()) {
-            ShaderCompiler.compileShaderIfChanged(LIGHTING_VERTEX_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_vertex_shader);
-            ShaderCompiler.compileShaderIfChanged(LIGHTING_FRAGMENT_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_fragment_shader);
-        }
-        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderModuleData[]
-                {
-                        new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_VERTEX_BIT, LIGHTING_VERTEX_SHADER_FILE_SPV),
-                        new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_FRAGMENT_BIT, LIGHTING_FRAGMENT_SHADER_FILE_SPV,
-                                this.lightSettingsUploader.getSpecInfo()),
-                });
+        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderData[]{
+                new ShaderProgram.ShaderData(VK_SHADER_STAGE_VERTEX_BIT, ImplUtils.get(LIGHTING_VERTEX_SHADER_FILE_SPV)),
+                new ShaderProgram.ShaderData(VK_SHADER_STAGE_FRAGMENT_BIT, ImplUtils.get(LIGHTING_FRAGMENT_SHADER_FILE_SPV), this.lightSettingsUploader.specInfo),
+        });
     }
 
     private void createUniforms(int numImages) {
@@ -227,7 +219,7 @@ public class LightPass {
             var cmdHandle = cmdBuffer.vk();
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.getVkPipeline());
+            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.vk());
 
             var viewport = VkViewport.calloc(1, stack)
                     .x(0)
@@ -253,7 +245,7 @@ public class LightPass {
                     .put(2, this.invMatricesDescriptorSets[idx].vk())
                     .put(3, this.shadowsMatricesDescriptorSets[idx].vk());
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    this.pipeline.getVkPipelineLayout(), 0, descriptorSets, null);
+                    this.pipeline.layout, 0, descriptorSets, null);
 
             vkCmdDraw(cmdHandle, 3, 1, 0, 0);
         }

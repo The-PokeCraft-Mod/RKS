@@ -104,11 +104,11 @@ public class Renderer {
     }
 
     private void createCommandBuffers() {
-        var numImages = this.swapChain.getNumImages();
-        this.cmdBuffers = new CmdBuffer[numImages];
-        this.fences = new Fence[numImages];
+        var imageCount = swapChain.getImageCount();
+        this.cmdBuffers = new CmdBuffer[imageCount];
+        this.fences = new Fence[imageCount];
 
-        for (var i = 0; i < numImages; i++) {
+        for (var i = 0; i < imageCount; i++) {
             this.cmdBuffers[i] = cmdPool.newBuffer(true, false);
             this.fences[i] = new Fence(this.device, true);
         }
@@ -140,7 +140,7 @@ public class Renderer {
         if (this.entitiesLoadedTimeStamp < scene.getEntitiesLoadedTimeStamp()) {
             this.entitiesLoadedTimeStamp = scene.getEntitiesLoadedTimeStamp();
             this.device.waitIdle();
-            this.globalBuffers.loadEntities(this.gpuModels, scene, this.cmdPool, this.graphicsQueue, this.swapChain.getNumImages());
+            this.globalBuffers.loadEntities(this.gpuModels, scene, this.cmdPool, this.graphicsQueue, this.swapChain.getImageCount());
             this.computeAnimator.onAnimatedEntitiesLoaded(this.globalBuffers);
             recordCommands();
         }

@@ -1,5 +1,6 @@
 package com.thepokecraftmod.renderer.impl.animation;
 
+import com.thepokecraftmod.renderer.impl.ImplUtils;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
@@ -77,15 +78,15 @@ public class GpuAnimator {
     }
 
     private void createPipeline(PipelineCache pipelineCache) {
-        var pipeLineCreationInfo = new ComputePipeline.PipeLineCreationInfo(this.shaderProgram, this.descriptorSetLayouts, PUSH_CONSTANTS_SIZE);
+        var pipeLineCreationInfo = new ComputePipeline.PipelineCreationInfo(this.shaderProgram, this.descriptorSetLayouts, PUSH_CONSTANTS_SIZE);
         this.computePipeline = new ComputePipeline(pipelineCache, pipeLineCreationInfo);
     }
 
     private void createShaders() {
         var settings = Settings.getInstance();
         if (settings.isShaderRecompilation())
-            ShaderCompiler.compileShaderIfChanged(ANIM_COMPUTE_SHADER_FILE_GLSL, Shaderc.shaderc_compute_shader);
-        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderModuleData[]{new ShaderProgram.ShaderModuleData(VK_SHADER_STAGE_COMPUTE_BIT, ANIM_COMPUTE_SHADER_FILE_SPV)});
+            ImplUtils.compileShaderIfChanged(ANIM_COMPUTE_SHADER_FILE_GLSL, Shaderc.shaderc_compute_shader);
+        this.shaderProgram = new ShaderProgram(this.device, new ShaderProgram.ShaderData[]{new ShaderProgram.ShaderData(VK_SHADER_STAGE_COMPUTE_BIT, ImplUtils.get(ANIM_COMPUTE_SHADER_FILE_SPV))});
     }
 
     public void onAnimatedEntitiesLoaded(GlobalBuffers globalBuffers) {
@@ -102,8 +103,8 @@ public class GpuAnimator {
 
             this.cmdBuffer.reset();
             this.cmdBuffer.record(null, false, () -> {
-                vkCmdPipelineBarrier(cmdBuffer.vk(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
-                vkCmdBindPipeline(cmdBuffer.vk(), VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipeline());
+                vkCmdPipelineBarrier(cmdBuffer.vk(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, this.memoryBarrier.vk(), null, null);
+                vkCmdBindPipeline(cmdBuffer.vk(), VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.vk());
 
                 var descriptorSets = stack.mallocLong(4)
                         .put(this.srcVerticesDescriptorSet.vk())
@@ -111,7 +112,7 @@ public class GpuAnimator {
                         .put(this.dstVerticesDescriptorSet.vk())
                         .put(this.jointMatricesDescriptorSet.vk())
                         .flip();
-                vkCmdBindDescriptorSets(cmdBuffer.vk(), VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipelineLayout(), 0, descriptorSets, null);
+                vkCmdBindDescriptorSets(cmdBuffer.vk(), VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.layout, 0, descriptorSets, null);
 
                 var entities = globalBuffers.getAnimatedEntities();
                 for (var animatedMesh : entities) {
@@ -135,7 +136,7 @@ public class GpuAnimator {
                                 .putInt(jointOffset / VkConstants.MAT4X4_SIZE)
                                 .putInt(vulkanAnimMesh.meshOffset() / VkConstants.FLOAT_LENGTH)
                                 .flip();
-                        vkCmdPushConstants(cmdBuffer.vk(), this.computePipeline.getVkPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantBuffer);
+                        vkCmdPushConstants(cmdBuffer.vk(), this.computePipeline.layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantBuffer);
                         vkCmdDispatch(cmdBuffer.vk(), groupSize, 1, 1);
                     }
                 }

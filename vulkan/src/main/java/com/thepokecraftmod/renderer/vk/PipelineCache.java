@@ -38,7 +38,7 @@ public class PipelineCache {
         return this.device;
     }
 
-    public long getVkPipelineCache() {
+    public long vk() {
         return this.vkPipelineCache;
     }
 }
