@@ -30,7 +30,7 @@ public class PipelineCache {
     }
 
     public void close() {
-        LOGGER.info("Closing pipeline cache");
+        LOGGER.info("Closing");
         vkDestroyPipelineCache(this.device.vk(), this.vkPipelineCache, null);
     }
 

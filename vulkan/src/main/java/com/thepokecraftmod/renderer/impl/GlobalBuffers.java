@@ -60,7 +60,7 @@ public class GlobalBuffers {
     }
 
     public void close() {
-        LOGGER.info("Closing global buffers");
+        LOGGER.info("Closing");
         this.verticesBuffer.close();
         this.indicesBuffer.close();
         if (this.indirectBuffer != null) this.indirectBuffer.close();

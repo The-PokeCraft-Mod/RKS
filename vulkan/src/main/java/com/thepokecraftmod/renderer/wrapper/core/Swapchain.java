@@ -141,7 +141,7 @@ public class Swapchain {
     }
 
     public void close() {
-        LOGGER.info("Closing Vulkan SwapChain");
+        LOGGER.info("Closing");
         this.swapChainExtent.free();
 
         var size = this.imageViews != null ? this.imageViews.length : 0;

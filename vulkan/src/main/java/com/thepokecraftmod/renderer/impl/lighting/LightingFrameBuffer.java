@@ -21,7 +21,7 @@ public class LightingFrameBuffer {
     }
 
     public void close() {
-        LOGGER.info("Closing Lighting FrameBuffer");
+        LOGGER.info("Closing");
         Arrays.stream(this.frameBuffers).forEach(FrameBuffer::close);
         this.lightingRenderPass.close();
     }

@@ -21,7 +21,7 @@ public class GeometryFrameBuffer {
     }
 
     public void close() {
-        LOGGER.info("Closing Geometry FrameBuffer");
+        LOGGER.info("Closing");
         this.geometryRenderPass.close();
         this.geometryAttachments.close();
         this.frameBuffer.close();

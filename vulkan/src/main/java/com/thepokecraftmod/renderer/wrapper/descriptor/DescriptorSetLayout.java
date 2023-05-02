@@ -22,7 +22,7 @@ public abstract class DescriptorSetLayout implements VkWrapper<Long> {
 
     @Override
     public void close() {
-        LOGGER.info("Closing descriptor set layout");
+        LOGGER.info("Closing");
         vkDestroyDescriptorSetLayout(this.device.vk(), this.layout, null);
     }
 

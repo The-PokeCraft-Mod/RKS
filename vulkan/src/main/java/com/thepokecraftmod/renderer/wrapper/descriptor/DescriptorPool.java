@@ -46,7 +46,7 @@ public class DescriptorPool implements VkWrapper<Long> {
 
     @Override
     public void close() {
-        LOGGER.info("Closing descriptor pool");
+        LOGGER.info("Closing");
         vkDestroyDescriptorPool(this.device.vk(), this.descriptorPool, null);
     }
 

@@ -52,8 +52,8 @@ public class GeometryPass implements Closeable {
 
     private PoolManager pools;
     private DescriptorSetLayout[] descSetLayouts;
-    private DescriptorSetLayout.DynUniformDescriptorSetLayout materialDescriptorSetLayout;
-    private DescriptorSet.StorageDescriptorSet materialsDescriptorSet;
+    private DescriptorSetLayout.DynUniformDescriptorSetLayout materialDescSetLayout;
+    private DescriptorSet.StorageDescriptorSet materialDescSet;
     private Pipeline pipeline;
     private DescriptorSet.UniformDescriptorSet projMatrixDescriptorSet;
     private VkBuffer projMatrixUniform;
@@ -92,7 +92,7 @@ public class GeometryPass implements Closeable {
         Arrays.stream(this.viewMatricesBuffer).forEach(VkBuffer::close);
         this.projMatrixUniform.close();
         this.textureSampler.close();
-        this.materialDescriptorSetLayout.close();
+        this.materialDescSetLayout.close();
         this.textureDescriptorSetLayout.close();
         this.uniformDescriptorSetLayout.close();
         this.storageDescriptorSetLayout.close();
@@ -115,14 +115,19 @@ public class GeometryPass implements Closeable {
         var settings = Settings.getInstance();
         this.uniformDescriptorSetLayout = new DescriptorSetLayout.UniformDescriptorSetLayout(this.device, 0, VK_SHADER_STAGE_VERTEX_BIT);
         this.textureDescriptorSetLayout = new DescriptorSetLayout.SamplerDescriptorSetLayout(this.device, settings.getMaxTextures(), 0, VK_SHADER_STAGE_FRAGMENT_BIT);
-        this.materialDescriptorSetLayout = new DescriptorSetLayout.DynUniformDescriptorSetLayout(this.device, 0, VK_SHADER_STAGE_FRAGMENT_BIT);
+        this.materialDescSetLayout = new DescriptorSetLayout.DynUniformDescriptorSetLayout(this.device, 0, VK_SHADER_STAGE_FRAGMENT_BIT);
         this.storageDescriptorSetLayout = new DescriptorSetLayout.StorageDescriptorSetLayout(this.device, 0, VK_SHADER_STAGE_FRAGMENT_BIT);
-        this.descSetLayouts = new DescriptorSetLayout[]{this.uniformDescriptorSetLayout, this.uniformDescriptorSetLayout, this.storageDescriptorSetLayout, this.textureDescriptorSetLayout,};
+        this.descSetLayouts = new DescriptorSetLayout[]{
+                this.uniformDescriptorSetLayout,
+                this.uniformDescriptorSetLayout,
+                this.storageDescriptorSetLayout,
+                this.textureDescriptorSetLayout
+        };
 
         this.textureSampler = new TextureSampler(this.device, 1);
         this.projMatrixUniform = new VkBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
         this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.projMatrixUniform, 0);
-        this.materialsDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.pools.getPool(), this.storageDescriptorSetLayout, globalBuffers.getMaterialsBuffer(), 0);
+        this.materialDescSet = new DescriptorSet.StorageDescriptorSet(this.pools.getPool(), this.storageDescriptorSetLayout, globalBuffers.getMaterialsBuffer(), 0);
 
         this.viewMatricesDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
         this.viewMatricesBuffer = new VkBuffer[numImages];
@@ -205,7 +210,7 @@ public class GeometryPass implements Closeable {
             var descriptorSets = stack.mallocLong(4)
                     .put(0, this.projMatrixDescriptorSet.vk())
                     .put(1, this.viewMatricesDescriptorSets[idx].vk())
-                    .put(2, this.materialsDescriptorSet.vk())
+                    .put(2, this.materialDescSet.vk())
                     .put(3, this.textureDescriptorSet.vk());
 
             vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.layout, 0, descriptorSets, null);

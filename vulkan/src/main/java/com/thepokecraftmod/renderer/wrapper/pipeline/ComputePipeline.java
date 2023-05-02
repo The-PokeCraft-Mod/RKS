@@ -65,7 +65,7 @@ public class ComputePipeline implements VkWrapper<Long> {
 
     @Override
     public void close() {
-        LOGGER.info("Closing ComputePipeline");
+        LOGGER.info("Closing");
         vkDestroyPipelineLayout(device.vk(), layout, null);
         vkDestroyPipeline(device.vk(), pipeline, null);
     }

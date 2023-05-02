@@ -46,7 +46,7 @@ public class ShadowsFrameBuffer {
     }
 
     public void close() {
-        LOGGER.info("Closing ShadowsFrameBuffer");
+        LOGGER.info("Closing");
         this.shadowsRenderPass.close();
         this.depthAttachment.close();
         this.frameBuffer.close();

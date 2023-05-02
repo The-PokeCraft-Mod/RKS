@@ -138,7 +138,7 @@ public class Pipeline implements VkWrapper<Long> {
     }
 
     public void close() {
-        LOGGER.info("Closing pipeline");
+        LOGGER.info("Closing");
         vkDestroyPipelineLayout(this.device.vk(), this.layout, null);
         vkDestroyPipeline(this.device.vk(), this.pipeline, null);
     }

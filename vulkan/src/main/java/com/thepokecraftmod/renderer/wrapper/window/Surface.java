@@ -24,7 +24,7 @@ public class Surface {
     }
 
     public void close() {
-        LOGGER.info("Closing Vulkan surface");
+        LOGGER.info("Closing");
         KHRSurface.vkDestroySurfaceKHR(this.physicalDevice.vk().getInstance(), this.vkSurface, null);
     }
 

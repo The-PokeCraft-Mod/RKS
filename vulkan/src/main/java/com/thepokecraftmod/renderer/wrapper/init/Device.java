@@ -96,7 +96,7 @@ public class Device implements VkWrapper<VkDevice> {
 
     @Override
     public void close() {
-        LOGGER.info("Closing Vulkan device");
+        LOGGER.info("Closing");
         this.memoryAllocator.close();
         vkDestroyDevice(this.vkDevice, null);
     }
