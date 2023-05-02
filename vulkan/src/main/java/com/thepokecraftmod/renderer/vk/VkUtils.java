@@ -14,15 +14,15 @@ public class VkUtils {
         // Utility class
     }
 
-    public static void copyMatrixToBuffer(VulkanBuffer vulkanBuffer, Matrix4f matrix) {
-        copyMatrixToBuffer(vulkanBuffer, matrix, 0);
+    public static void copyMatrixToBuffer(VkBuffer vkBuffer, Matrix4f matrix) {
+        copyMatrixToBuffer(vkBuffer, matrix, 0);
     }
 
-    public static void copyMatrixToBuffer(VulkanBuffer vulkanBuffer, Matrix4f matrix, int offset) {
-        var mappedMemory = vulkanBuffer.map();
-        var matrixBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) vulkanBuffer.getRequestedSize());
+    public static void copyMatrixToBuffer(VkBuffer vkBuffer, Matrix4f matrix, int offset) {
+        var mappedMemory = vkBuffer.map();
+        var matrixBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) vkBuffer.getRequestedSize());
         matrix.get(offset, matrixBuffer);
-        vulkanBuffer.unMap();
+        vkBuffer.unMap();
     }
 
     public static int memoryTypeFromProperties(PhysicalDevice physDevice, int typeBits, int reqsMask) {

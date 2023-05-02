@@ -4,7 +4,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT;
 import com.thepokecraftmod.renderer.vk.Image;
-import com.thepokecraftmod.renderer.vk.VulkanBuffer;
+import com.thepokecraftmod.renderer.vk.VkBuffer;
 import com.thepokecraftmod.renderer.vk.init.Device;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
@@ -23,7 +23,7 @@ public class InteropUtils {
     private static final boolean IS_WIN32 = true;
 
     public static class BufferVkGL implements Closeable {
-        public VulkanBuffer bufVk;
+        public VkBuffer bufVk;
         public long win32Handle = -1;
         public int fdHandle = -1;
         public int glMemoryObject;

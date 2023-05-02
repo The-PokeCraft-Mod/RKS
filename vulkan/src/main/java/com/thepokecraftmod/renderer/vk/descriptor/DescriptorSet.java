@@ -1,7 +1,7 @@
 package com.thepokecraftmod.renderer.vk.descriptor;
 
 import com.thepokecraftmod.renderer.vk.VkUtils;
-import com.thepokecraftmod.renderer.vk.VulkanBuffer;
+import com.thepokecraftmod.renderer.vk.VkBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 import org.lwjgl.vulkan.VkDescriptorSetAllocateInfo;
@@ -18,14 +18,14 @@ public abstract class DescriptorSet {
     }
 
     public static class DynUniformDescriptorSet extends SimpleDescriptorSet {
-        public DynUniformDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VulkanBuffer buffer, int binding, long size) {
+        public DynUniformDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VkBuffer buffer, int binding, long size) {
             super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, size);
         }
     }
 
     public static class SimpleDescriptorSet extends DescriptorSet {
 
-        public SimpleDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VulkanBuffer buffer, int binding, int type, long size) {
+        public SimpleDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VkBuffer buffer, int binding, int type, long size) {
             try (var stack = MemoryStack.stackPush()) {
                 var device = descriptorPool.getDevice();
                 var pDescriptorSetLayout = stack.mallocLong(1).put(0, descriptorSetLayout.vk());
@@ -61,7 +61,7 @@ public abstract class DescriptorSet {
 
     public static class StorageDescriptorSet extends SimpleDescriptorSet {
 
-        public StorageDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VulkanBuffer buffer, int binding) {
+        public StorageDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout, VkBuffer buffer, int binding) {
             super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer.getRequestedSize());
         }
     }
@@ -69,7 +69,7 @@ public abstract class DescriptorSet {
     public static class UniformDescriptorSet extends SimpleDescriptorSet {
 
         public UniformDescriptorSet(DescriptorPool descriptorPool, DescriptorSetLayout descriptorSetLayout,
-                                    VulkanBuffer buffer, int binding) {
+                                    VkBuffer buffer, int binding) {
             super(descriptorPool, descriptorSetLayout, buffer, binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                     buffer.getRequestedSize());
         }

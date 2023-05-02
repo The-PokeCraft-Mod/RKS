@@ -49,16 +49,16 @@ public class GpuAnimator {
     }
 
     public void close() {
-        this.computePipeline.close();
-        this.shaderProgram.close();
-        this.cmdBuffer.close();
-        this.pools.close();
-        this.storageDescriptorSetLayout.close();
-        this.fence.close();
+        computePipeline.close();
+        shaderProgram.close();
+        cmdBuffer.close();
+        pools.close();
+        storageDescriptorSetLayout.close();
+        fence.close();
     }
 
     private void createCommandBuffers(CmdPool cmdPool) {
-        this.cmdBuffer = new CmdBuffer(cmdPool, true, false);
+        this.cmdBuffer = cmdPool.newBuffer(true, false);
         this.fence = new Fence(this.device, true);
     }
 
@@ -101,48 +101,48 @@ public class GpuAnimator {
             this.fence.reset();
 
             this.cmdBuffer.reset();
-            this.cmdBuffer.beginRecording();
-            var cmdHandle = this.cmdBuffer.vk();
+            this.cmdBuffer.record(null, false, () -> {
+                vkCmdPipelineBarrier(cmdBuffer.vk(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
+                vkCmdBindPipeline(cmdBuffer.vk(), VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipeline());
 
-            vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
-            vkCmdBindPipeline(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipeline());
+                var descriptorSets = stack.mallocLong(4)
+                        .put(this.srcVerticesDescriptorSet.vk())
+                        .put(this.weightsDescriptorSet.vk())
+                        .put(this.dstVerticesDescriptorSet.vk())
+                        .put(this.jointMatricesDescriptorSet.vk())
+                        .flip();
+                vkCmdBindDescriptorSets(cmdBuffer.vk(), VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipelineLayout(), 0, descriptorSets, null);
 
-            var descriptorSets = stack.mallocLong(4)
-                    .put(this.srcVerticesDescriptorSet.vk())
-                    .put(this.weightsDescriptorSet.vk())
-                    .put(this.dstVerticesDescriptorSet.vk())
-                    .put(this.jointMatricesDescriptorSet.vk())
-                    .flip();
-            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_COMPUTE, this.computePipeline.getVkPipelineLayout(), 0, descriptorSets, null);
+                var entities = globalBuffers.getAnimatedEntities();
+                for (var animatedMesh : entities) {
+                    var entity = animatedMesh.entity;
+                    var entityAnimation = entity.getAnimation();
+                    if (!entityAnimation.playing) continue;
+                    var model = animatedMesh.model;
+                    var animIdx = entity.getAnimation().animationIdx;
+                    var currentFrame = entity.getAnimation().currentFrame;
+                    var jointOffset = model.getAnimationData().get(animIdx).getFrameList().get(currentFrame).jointOffset();
 
-            var entities = globalBuffers.getAnimatedEntities();
-            for (var animatedMesh : entities) {
-                var entity = animatedMesh.entity;
-                var entityAnimation = entity.getAnimation();
-                if (!entityAnimation.playing) continue;
-                var model = animatedMesh.model;
-                var animIdx = entity.getAnimation().animationIdx;
-                var currentFrame = entity.getAnimation().currentFrame;
-                var jointOffset = model.getAnimationData().get(animIdx).getFrameList().get(currentFrame).jointOffset();
+                    for (var vulkanAnimMesh : animatedMesh.meshes) {
+                        var mesh = vulkanAnimMesh.vulkanMesh();
+                        var groupSize = (int) Math.ceil((mesh.verticesSize() / (float) InstancedVertexBufferStructure.SIZE_IN_BYTES) / LOCAL_SIZE_X);
 
-                for (var vulkanAnimMesh : animatedMesh.meshes) {
-                    var mesh = vulkanAnimMesh.vulkanMesh();
-                    var groupSize = (int) Math.ceil((mesh.verticesSize() / (float) InstancedVertexBufferStructure.SIZE_IN_BYTES) / LOCAL_SIZE_X);
-
-                    // Push constants
-                    var pushConstantBuffer = stack.malloc(PUSH_CONSTANTS_SIZE)
-                            .putInt(mesh.verticesOffset() / VkConstants.FLOAT_LENGTH)
-                            .putInt(mesh.verticesSize() / VkConstants.FLOAT_LENGTH)
-                            .putInt(mesh.weightsOffset() / VkConstants.FLOAT_LENGTH)
-                            .putInt(jointOffset / VkConstants.MAT4X4_SIZE)
-                            .putInt(vulkanAnimMesh.meshOffset() / VkConstants.FLOAT_LENGTH)
-                            .flip();
-                    vkCmdPushConstants(cmdHandle, this.computePipeline.getVkPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantBuffer);
-                    vkCmdDispatch(cmdHandle, groupSize, 1, 1);
+                        // Push constants
+                        var pushConstantBuffer = stack.malloc(PUSH_CONSTANTS_SIZE)
+                                .putInt(mesh.verticesOffset() / VkConstants.FLOAT_LENGTH)
+                                .putInt(mesh.verticesSize() / VkConstants.FLOAT_LENGTH)
+                                .putInt(mesh.weightsOffset() / VkConstants.FLOAT_LENGTH)
+                                .putInt(jointOffset / VkConstants.MAT4X4_SIZE)
+                                .putInt(vulkanAnimMesh.meshOffset() / VkConstants.FLOAT_LENGTH)
+                                .flip();
+                        vkCmdPushConstants(cmdBuffer.vk(), this.computePipeline.getVkPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantBuffer);
+                        vkCmdDispatch(cmdBuffer.vk(), groupSize, 1, 1);
+                    }
                 }
-            }
+
+                return null;
+            });
         }
-        this.cmdBuffer.endRecording();
     }
 
     public void submit() {

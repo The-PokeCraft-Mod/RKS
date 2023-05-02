@@ -1,22 +1,19 @@
 package com.thepokecraftmod.renderer.vk;
 
 import com.thepokecraftmod.renderer.vk.init.Device;
-import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.VkBufferCreateInfo;
-import org.lwjgl.vulkan.VkExternalMemoryBufferCreateInfo;
 
 import java.util.function.Function;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
-import static org.lwjgl.vulkan.VK11.VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 import static org.lwjgl.vulkan.VK11.VK_SHARING_MODE_EXCLUSIVE;
 
-public class VulkanBuffer {
+public class VkBuffer {
 
     public final long allocation;
     private final long buffer;
@@ -27,11 +24,11 @@ public class VulkanBuffer {
     private long mappedMemory;
 
     // FIXME: BufferSettings like ImageData builder to create a buffer
-    public VulkanBuffer(Device device, long size, int bufferUsage, int memoryUsage, int requiredFlags) {
+    public VkBuffer(Device device, long size, int bufferUsage, int memoryUsage, int requiredFlags) {
         this(device, size, bufferUsage, memoryUsage, requiredFlags, stack -> 0);
     }
 
-    public VulkanBuffer(Device device, long size, int bufferUsage, int memoryUsage, int requiredFlags, Function<MemoryStack, Integer> pNext) {
+    public VkBuffer(Device device, long size, int bufferUsage, int memoryUsage, int requiredFlags, Function<MemoryStack, Integer> pNext) {
         try (var stack = MemoryStack.stackPush()) {
             this.device = device;
             this.requestedSize = size;

@@ -43,7 +43,7 @@ public class GeometryPass implements Closeable {
     private DescriptorSet.StorageDescriptorSet materialsDescriptorSet;
     private Pipeline pipeLine;
     private DescriptorSet.UniformDescriptorSet projMatrixDescriptorSet;
-    private VulkanBuffer projMatrixUniform;
+    private VkBuffer projMatrixUniform;
     private ShaderProgram shaderProgram;
     private DescriptorSetLayout.StorageDescriptorSetLayout storageDescriptorSetLayout;
     private Swapchain swapChain;
@@ -51,7 +51,7 @@ public class GeometryPass implements Closeable {
     private DescriptorSetLayout.SamplerDescriptorSetLayout textureDescriptorSetLayout;
     private TextureSampler textureSampler;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
-    private VulkanBuffer[] viewMatricesBuffer;
+    private VkBuffer[] viewMatricesBuffer;
     private DescriptorSet.UniformDescriptorSet[] viewMatricesDescriptorSets;
 
     public GeometryPass(Swapchain swapChain, PipelineCache pipelineCache, Scene scene, GlobalBuffers globalBuffers) {
@@ -74,7 +74,7 @@ public class GeometryPass implements Closeable {
     public void close() {
         this.pipeLine.close();
         this.geometrySpecConstants.close();
-        Arrays.stream(this.viewMatricesBuffer).forEach(VulkanBuffer::close);
+        Arrays.stream(this.viewMatricesBuffer).forEach(VkBuffer::close);
         this.projMatrixUniform.close();
         this.textureSampler.close();
         this.materialDescriptorSetLayout.close();
@@ -105,14 +105,14 @@ public class GeometryPass implements Closeable {
         this.geometryDescriptorSetLayouts = new DescriptorSetLayout[]{this.uniformDescriptorSetLayout, this.uniformDescriptorSetLayout, this.storageDescriptorSetLayout, this.textureDescriptorSetLayout,};
 
         this.textureSampler = new TextureSampler(this.device, 1);
-        this.projMatrixUniform = new VulkanBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+        this.projMatrixUniform = new VkBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
         this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.projMatrixUniform, 0);
         this.materialsDescriptorSet = new DescriptorSet.StorageDescriptorSet(this.pools.getPool(), this.storageDescriptorSetLayout, globalBuffers.getMaterialsBuffer(), 0);
 
         this.viewMatricesDescriptorSets = new DescriptorSet.UniformDescriptorSet[numImages];
-        this.viewMatricesBuffer = new VulkanBuffer[numImages];
+        this.viewMatricesBuffer = new VkBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
-            this.viewMatricesBuffer[i] = new VulkanBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            this.viewMatricesBuffer[i] = new VkBuffer(this.device, VkConstants.MAT4X4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             this.viewMatricesDescriptorSets[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.viewMatricesBuffer[i], 0);
         }
     }

@@ -1,5 +1,10 @@
 package com.thepokecraftmod.renderer.impl.lighting;
 
+import com.thepokecraftmod.renderer.Settings;
+import com.thepokecraftmod.renderer.impl.shadows.CascadeShadow;
+import com.thepokecraftmod.renderer.scene.Light;
+import com.thepokecraftmod.renderer.scene.Scene;
+import com.thepokecraftmod.renderer.vk.*;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorPool;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSet;
 import com.thepokecraftmod.renderer.vk.descriptor.DescriptorSetLayout;
@@ -14,11 +19,6 @@ import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
 import org.lwjgl.vulkan.VkViewport;
-import com.thepokecraftmod.renderer.Settings;
-import com.thepokecraftmod.renderer.impl.shadows.CascadeShadow;
-import com.thepokecraftmod.renderer.scene.Light;
-import com.thepokecraftmod.renderer.scene.Scene;
-import com.thepokecraftmod.renderer.vk.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,13 +44,13 @@ public class LightPass {
     private PoolManager pools;
     private DescriptorSetLayout[] descriptorSetLayouts;
     private Fence[] fences;
-    private VulkanBuffer[] invMatricesBuffers;
+    private VkBuffer[] invMatricesBuffers;
     private DescriptorSet.UniformDescriptorSet[] invMatricesDescriptorSets;
-    private VulkanBuffer[] lightsBuffers;
+    private VkBuffer[] lightsBuffers;
     private DescriptorSet.UniformDescriptorSet[] lightsDescriptorSets;
     private Pipeline pipeline;
     private ShaderProgram shaderProgram;
-    private VulkanBuffer[] shadowsMatricesBuffers;
+    private VkBuffer[] shadowsMatricesBuffers;
     private DescriptorSet.UniformDescriptorSet[] shadowsMatricesDescriptorSets;
     private Swapchain swapChain;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
@@ -75,9 +75,8 @@ public class LightPass {
 
     public CmdBuffer beginRecording(List<CascadeShadow> cascadeShadows) {
         var idx = this.swapChain.getCurrentFrame();
-
         var fence = this.fences[idx];
-        var commandBuffer = this.cmdBuffers[idx];
+        var cmdBuffer = this.cmdBuffers[idx];
 
         fence.waitForFence();
         fence.reset();
@@ -86,10 +85,10 @@ public class LightPass {
         updateInvMatrices(this.invMatricesBuffers[idx]);
         updateCascadeShadowMatrices(cascadeShadows, this.shadowsMatricesBuffers[idx]);
 
-        commandBuffer.reset();
-        commandBuffer.beginRecording();
+        cmdBuffer.reset();
+        cmdBuffer.beginRecording();
 
-        return commandBuffer;
+        return cmdBuffer;
     }
 
     public void close() {
@@ -97,12 +96,12 @@ public class LightPass {
         this.attachmentsDescriptorSet.close();
         this.attachmentsLayout.close();
         this.pools.close();
-        Arrays.stream(this.lightsBuffers).forEach(VulkanBuffer::close);
+        Arrays.stream(this.lightsBuffers).forEach(VkBuffer::close);
         this.pipeline.close();
         this.lightSettingsUploader.close();
-        Arrays.stream(this.invMatricesBuffers).forEach(VulkanBuffer::close);
+        Arrays.stream(this.invMatricesBuffers).forEach(VkBuffer::close);
         this.lightingFrameBuffer.close();
-        Arrays.stream(this.shadowsMatricesBuffers).forEach(VulkanBuffer::close);
+        Arrays.stream(this.shadowsMatricesBuffers).forEach(VkBuffer::close);
         this.shaderProgram.close();
         Arrays.stream(this.cmdBuffers).forEach(CmdBuffer::close);
         Arrays.stream(this.fences).forEach(Fence::close);
@@ -113,7 +112,7 @@ public class LightPass {
         this.fences = new Fence[numImages];
 
         for (var i = 0; i < numImages; i++) {
-            this.cmdBuffers[i] = new CmdBuffer(cmdPool, true, false);
+            this.cmdBuffers[i] = cmdPool.newBuffer(true, false);
             this.fences[i] = new Fence(this.device, true);
         }
     }
@@ -171,20 +170,20 @@ public class LightPass {
     }
 
     private void createUniforms(int numImages) {
-        this.lightsBuffers = new VulkanBuffer[numImages];
-        this.invMatricesBuffers = new VulkanBuffer[numImages];
-        this.shadowsMatricesBuffers = new VulkanBuffer[numImages];
+        this.lightsBuffers = new VkBuffer[numImages];
+        this.invMatricesBuffers = new VkBuffer[numImages];
+        this.shadowsMatricesBuffers = new VkBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
-            this.lightsBuffers[i] = new VulkanBuffer(this.device, (long)
+            this.lightsBuffers[i] = new VkBuffer(this.device, (long)
                     VkConstants.INT_LENGTH * 4 + VkConstants.VEC4_SIZE * 2 * VkConstants.MAX_LIGHTS +
                     VkConstants.VEC4_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
-            this.invMatricesBuffers[i] = new VulkanBuffer(this.device, (long)
+            this.invMatricesBuffers[i] = new VkBuffer(this.device, (long)
                     VkConstants.MAT4X4_SIZE * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
-            this.shadowsMatricesBuffers[i] = new VulkanBuffer(this.device, (long)
+            this.shadowsMatricesBuffers[i] = new VkBuffer(this.device, (long)
                     (VkConstants.MAT4X4_SIZE + VkConstants.VEC4_SIZE) * VkConstants.SHADOW_MAP_CASCADE_COUNT,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
@@ -280,7 +279,7 @@ public class LightPass {
         }
     }
 
-    private void updateCascadeShadowMatrices(List<CascadeShadow> cascadeShadows, VulkanBuffer shadowsUniformBuffer) {
+    private void updateCascadeShadowMatrices(List<CascadeShadow> cascadeShadows, VkBuffer shadowsUniformBuffer) {
         var mappedMemory = shadowsUniformBuffer.map();
         var buffer = MemoryUtil.memByteBuffer(mappedMemory, (int) shadowsUniformBuffer.getRequestedSize());
         var offset = 0;
@@ -292,7 +291,7 @@ public class LightPass {
         shadowsUniformBuffer.unMap();
     }
 
-    private void updateInvMatrices(VulkanBuffer invMatricesBuffer) {
+    private void updateInvMatrices(VkBuffer invMatricesBuffer) {
         var invProj = new Matrix4f(this.scene.getProjection().getProjectionMatrix()).invert();
         var invView = new Matrix4f(this.scene.getCamera().getViewMatrix()).invert();
         VkUtils.copyMatrixToBuffer(invMatricesBuffer, invProj, 0);
@@ -300,7 +299,7 @@ public class LightPass {
     }
 
     private void updateLights(Vector4f ambientLight, Light[] lights, Matrix4f viewMatrix,
-                              VulkanBuffer lightsBuffer) {
+                              VkBuffer lightsBuffer) {
         var mappedMemory = lightsBuffer.map();
         var uniformBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) lightsBuffer.getRequestedSize());
 

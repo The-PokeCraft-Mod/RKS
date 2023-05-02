@@ -10,8 +10,8 @@ import static org.lwjgl.vulkan.VK11.*;
 
 public class CmdPool implements VkWrapper<Long> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CmdPool.class);
-    private final Device device;
-    private final long vkCommandPool;
+    public final Device device;
+    private final long cmdPool;
 
     public CmdPool(Device device, int queueFamilyIndex) {
         try (var stack = MemoryStack.stackPush()) {
@@ -22,25 +22,23 @@ public class CmdPool implements VkWrapper<Long> {
                     .flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
                     .queueFamilyIndex(queueFamilyIndex);
 
-            var lp = stack.mallocLong(1);
-            VkUtils.ok(vkCreateCommandPool(device.vk(), cmdPoolInfo, null, lp),
-                    "Failed to create command pool");
-
-            this.vkCommandPool = lp.get(0);
+            var pCmdPool = stack.mallocLong(1);
+            VkUtils.ok(vkCreateCommandPool(device.vk(), cmdPoolInfo, null, pCmdPool), "Failed to create command pool");
+            this.cmdPool = pCmdPool.get(0);
         }
+    }
+
+    public CmdBuffer newBuffer(boolean primary, boolean oneTimeSubmit) {
+        return new CmdBuffer(this, primary, oneTimeSubmit);
     }
 
     @Override
     public void close() {
-        vkDestroyCommandPool(this.device.vk(), this.vkCommandPool, null);
-    }
-
-    public Device getDevice() {
-        return this.device;
+        vkDestroyCommandPool(this.device.vk(), this.cmdPool, null);
     }
 
     @Override
     public Long vk() {
-        return this.vkCommandPool;
+        return this.cmdPool;
     }
 }

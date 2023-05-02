@@ -40,7 +40,7 @@ public class ShadowPass {
     private Pipeline pipeLine;
     private DescriptorSet.UniformDescriptorSet[] projMatrixDescriptorSet;
     private ShaderProgram shaderProgram;
-    private VulkanBuffer[] shadowsUniforms;
+    private VkBuffer[] shadowsUniforms;
     private Swapchain swapChain;
     private DescriptorSetLayout.UniformDescriptorSetLayout uniformDescriptorSetLayout;
 
@@ -59,7 +59,7 @@ public class ShadowPass {
 
     public void close() {
         this.pipeLine.close();
-        Arrays.stream(this.shadowsUniforms).forEach(VulkanBuffer::close);
+        Arrays.stream(this.shadowsUniforms).forEach(VkBuffer::close);
         this.uniformDescriptorSetLayout.close();
         this.pools.close();
         this.shaderProgram.close();
@@ -79,9 +79,9 @@ public class ShadowPass {
         };
 
         this.projMatrixDescriptorSet = new DescriptorSet.UniformDescriptorSet[numImages];
-        this.shadowsUniforms = new VulkanBuffer[numImages];
+        this.shadowsUniforms = new VkBuffer[numImages];
         for (var i = 0; i < numImages; i++) {
-            this.shadowsUniforms[i] = new VulkanBuffer(this.device, (long) VkConstants.MAT4X4_SIZE * VkConstants.SHADOW_MAP_CASCADE_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            this.shadowsUniforms[i] = new VkBuffer(this.device, (long) VkConstants.MAT4X4_SIZE * VkConstants.SHADOW_MAP_CASCADE_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             this.projMatrixDescriptorSet[i] = new DescriptorSet.UniformDescriptorSet(this.pools.getPool(), this.uniformDescriptorSetLayout, this.shadowsUniforms[i], 0);
         }
     }

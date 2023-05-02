@@ -109,7 +109,7 @@ public class Renderer {
         this.fences = new Fence[numImages];
 
         for (var i = 0; i < numImages; i++) {
-            this.cmdBuffers[i] = new CmdBuffer(this.cmdPool, true, false);
+            this.cmdBuffers[i] = cmdPool.newBuffer(true, false);
             this.fences[i] = new Fence(this.device, true);
         }
     }
@@ -124,12 +124,14 @@ public class Renderer {
 
     private void recordCommands() {
         var idx = 0;
-        for (var commandBuffer : this.cmdBuffers) {
-            commandBuffer.reset();
-            commandBuffer.beginRecording();
-            this.geometryPass.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
-            this.shadowPass.recordCommandBuffer(commandBuffer, this.globalBuffers, idx);
-            commandBuffer.endRecording();
+        for (var cmdBuffer : this.cmdBuffers) {
+            var currentIdx = idx;
+            cmdBuffer.reset();
+            cmdBuffer.record(null, false, () -> {
+                this.geometryPass.recordCommandBuffer(cmdBuffer, this.globalBuffers, currentIdx);
+                this.shadowPass.recordCommandBuffer(cmdBuffer, this.globalBuffers, currentIdx);
+                return null;
+            });
             idx++;
         }
     }

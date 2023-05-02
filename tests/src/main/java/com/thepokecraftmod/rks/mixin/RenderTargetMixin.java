@@ -82,50 +82,50 @@ public class RenderTargetMixin {
         fboTex(GL30C.GL_DEPTH_ATTACHMENT, depthBufferId);
 
         try (var stack = MemoryStack.stackPush()) {
-            var cmdBuffer = new CmdBuffer(CreeperReplacementTest.getRenderer().cmdPool, true, true);
-            cmdBuffer.beginRecording();
+            var cmdBuffer = CreeperReplacementTest.getRenderer().cmdPool.newBuffer(true, true);
+            cmdBuffer.record(CreeperReplacementTest.getRenderer().graphicsQueue, true, () -> {
+                vkCmdPipelineBarrier(
+                        cmdBuffer.vk(),
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                        0,
+                        null,
+                        null,
+                        VkImageMemoryBarrier.calloc(1, stack)
+                                .sType$Default()
+                                .srcAccessMask(0)
+                                .dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+                                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                                .newLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                                .image(interopColorTexture.image.vk())
+                                .subresourceRange(r1 -> r1.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                                        .layerCount(1)
+                                        .levelCount(1)
+                                )
+                );
 
-            vkCmdPipelineBarrier(
-                    cmdBuffer.vk(),
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                    0,
-                    null,
-                    null,
-                    VkImageMemoryBarrier.calloc(1, stack)
-                            .sType$Default()
-                            .srcAccessMask(0)
-                            .dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-                            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-                            .newLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                            .image(interopColorTexture.image.vk())
-                            .subresourceRange(r1 -> r1.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                                    .layerCount(1)
-                                    .levelCount(1)
-                            )
-            );
+                vkCmdPipelineBarrier(
+                        cmdBuffer.vk(),
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                        0,
+                        null,
+                        null,
+                        VkImageMemoryBarrier.calloc(1, stack)
+                                .sType$Default()
+                                .srcAccessMask(0)
+                                .dstAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
+                                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                                .newLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                                .image(interopDepthTexture.image.vk())
+                                .subresourceRange(r1 ->
+                                        r1.aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
+                                                .layerCount(1)
+                                                .levelCount(1))
+                );
 
-            vkCmdPipelineBarrier(
-                    cmdBuffer.vk(),
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                    0,
-                    null,
-                    null,
-                    VkImageMemoryBarrier.calloc(1, stack)
-                            .sType$Default()
-                            .srcAccessMask(0)
-                            .dstAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
-                            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-                            .newLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-                            .image(interopDepthTexture.image.vk())
-                            .subresourceRange(r1 ->
-                                    r1.aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-                                            .layerCount(1)
-                                            .levelCount(1))
-            );
-            cmdBuffer.endRecording();
-            cmdBuffer.submitAndWait(CreeperReplacementTest.getVkDevice(), CreeperReplacementTest.getRenderer().graphicsQueue);
+                return null;
+            });
         }
     }
 

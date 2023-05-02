@@ -28,16 +28,16 @@ public class GlobalBuffers {
     // Handle std430 alignment
     private static final int MATERIAL_PADDING = VkConstants.FLOAT_LENGTH * 3;
     private static final int MATERIAL_SIZE = VkConstants.VEC4_SIZE + VkConstants.INT_LENGTH * 3 + VkConstants.FLOAT_LENGTH * 2 + MATERIAL_PADDING;
-    private final VulkanBuffer animJointMatricesBuffer;
-    private final VulkanBuffer animWeightsBuffer;
-    private final VulkanBuffer indicesBuffer;
-    private final VulkanBuffer materialsBuffer;
-    private final VulkanBuffer verticesBuffer;
-    private VulkanBuffer animIndirectBuffer;
-    private VulkanBuffer[] animInstanceDataBuffers;
-    private VulkanBuffer animVerticesBuffer;
-    private VulkanBuffer indirectBuffer;
-    private VulkanBuffer[] instanceDataBuffers;
+    private final VkBuffer animJointMatricesBuffer;
+    private final VkBuffer animWeightsBuffer;
+    private final VkBuffer indicesBuffer;
+    private final VkBuffer materialsBuffer;
+    private final VkBuffer verticesBuffer;
+    private VkBuffer animIndirectBuffer;
+    private VkBuffer[] animInstanceDataBuffers;
+    private VkBuffer animVerticesBuffer;
+    private VkBuffer indirectBuffer;
+    private VkBuffer[] instanceDataBuffers;
     private int numAnimIndirectCommands;
     private int numIndirectCommands;
     private List<AnimatedEntity> animatedEntityList;
@@ -45,11 +45,11 @@ public class GlobalBuffers {
     public GlobalBuffers(Device device) {
         LOGGER.info("Creating global buffers");
         var settings = Settings.getInstance();
-        this.verticesBuffer = new VulkanBuffer(device, settings.getMaxVerticesBuffer(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.indicesBuffer = new VulkanBuffer(device, settings.getMaxIndicesBuffer(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.materialsBuffer = new VulkanBuffer(device, (long) settings.getMaxMaterials() * VkConstants.VEC4_SIZE * 9, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.animJointMatricesBuffer = new VulkanBuffer(device, settings.getMaxJointMatricesBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-        this.animWeightsBuffer = new VulkanBuffer(device, settings.getMaxAnimWeightsBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.verticesBuffer = new VkBuffer(device, settings.getMaxVerticesBuffer(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.indicesBuffer = new VkBuffer(device, settings.getMaxIndicesBuffer(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.materialsBuffer = new VkBuffer(device, (long) settings.getMaxMaterials() * VkConstants.VEC4_SIZE * 9, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.animJointMatricesBuffer = new VkBuffer(device, settings.getMaxJointMatricesBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+        this.animWeightsBuffer = new VkBuffer(device, settings.getMaxAnimWeightsBuffer(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
         this.numIndirectCommands = 0;
     }
 
@@ -63,44 +63,44 @@ public class GlobalBuffers {
         this.materialsBuffer.close();
         this.animJointMatricesBuffer.close();
         this.animWeightsBuffer.close();
-        if (this.instanceDataBuffers != null) Arrays.stream(this.instanceDataBuffers).forEach(VulkanBuffer::close);
+        if (this.instanceDataBuffers != null) Arrays.stream(this.instanceDataBuffers).forEach(VkBuffer::close);
         if (this.animInstanceDataBuffers != null)
-            Arrays.stream(this.animInstanceDataBuffers).forEach(VulkanBuffer::close);
+            Arrays.stream(this.animInstanceDataBuffers).forEach(VkBuffer::close);
     }
 
-    public VulkanBuffer getAnimIndirectBuffer() {
+    public VkBuffer getAnimIndirectBuffer() {
         return this.animIndirectBuffer;
     }
 
-    public VulkanBuffer[] getAnimInstanceDataBuffers() {
+    public VkBuffer[] getAnimInstanceDataBuffers() {
         return this.animInstanceDataBuffers;
     }
 
-    public VulkanBuffer getAnimJointMatricesBuffer() {
+    public VkBuffer getAnimJointMatricesBuffer() {
         return this.animJointMatricesBuffer;
     }
 
-    public VulkanBuffer getAnimVerticesBuffer() {
+    public VkBuffer getAnimVerticesBuffer() {
         return this.animVerticesBuffer;
     }
 
-    public VulkanBuffer getAnimWeightsBuffer() {
+    public VkBuffer getAnimWeightsBuffer() {
         return this.animWeightsBuffer;
     }
 
-    public VulkanBuffer getIndicesBuffer() {
+    public VkBuffer getIndicesBuffer() {
         return this.indicesBuffer;
     }
 
-    public VulkanBuffer getIndirectBuffer() {
+    public VkBuffer getIndirectBuffer() {
         return this.indirectBuffer;
     }
 
-    public VulkanBuffer[] getInstanceDataBuffers() {
+    public VkBuffer[] getInstanceDataBuffers() {
         return this.instanceDataBuffers;
     }
 
-    public VulkanBuffer getMaterialsBuffer() {
+    public VkBuffer getMaterialsBuffer() {
         return this.materialsBuffer;
     }
 
@@ -112,7 +112,7 @@ public class GlobalBuffers {
         return this.numIndirectCommands;
     }
 
-    public VulkanBuffer getVerticesBuffer() {
+    public VkBuffer getVerticesBuffer() {
         return this.verticesBuffer;
     }
 
@@ -121,15 +121,15 @@ public class GlobalBuffers {
     }
 
     private void loadAnimEntities(List<GpuModel> gpuModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
-        this.animatedEntityList = new ArrayList<>();
-        this.numAnimIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
-            var device = cmdPool.getDevice();
-            var cmdBuffer = new CmdBuffer(cmdPool, true, true);
+            this.animatedEntityList = new ArrayList<>();
+            this.numAnimIndirectCommands = 0;
+            var device = cmdPool.device;
+            var cmdBuffer = cmdPool.newBuffer(true, true);
 
             var bufferOffset = 0;
             var firstInstance = 0;
-            var cmdList = new ArrayList<VkDrawIndexedIndirectCommand>();
+            var animatedCmdList = new ArrayList<VkDrawIndexedIndirectCommand>();
             for (var vulkanModel : gpuModelList) {
                 var entities = scene.getEntitiesByModelId(vulkanModel.getModelId());
                 if (entities.isEmpty()) continue;
@@ -145,7 +145,7 @@ public class GlobalBuffers {
                         cmd.instanceCount(1);
                         cmd.vertexOffset(bufferOffset / VertexBufferStructure.SIZE_IN_BYTES);
                         cmd.firstInstance(firstInstance);
-                        cmdList.add(cmd);
+                        animatedCmdList.add(cmd);
 
                         vulkanAnimMeshList.add(new AnimatedEntity.VulkanAnimMesh(bufferOffset, vulkanMesh));
                         bufferOffset += vulkanMesh.verticesSize();
@@ -153,17 +153,15 @@ public class GlobalBuffers {
                     }
                 }
             }
-            this.animVerticesBuffer = new VulkanBuffer(device, bufferOffset, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+            this.animVerticesBuffer = new VkBuffer(device, bufferOffset, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 
-            this.numAnimIndirectCommands = cmdList.size();
-            if (this.numAnimIndirectCommands > 0) {
-                cmdBuffer.beginRecording();
-
+            this.numAnimIndirectCommands = animatedCmdList.size();
+            if (this.numAnimIndirectCommands > 0) cmdBuffer.record(queue, true, () -> {
                 var indirectStgBuffer = new StagingBuffer(device, (long) IND_COMMAND_STRIDE * this.numAnimIndirectCommands);
                 if (this.animIndirectBuffer != null) this.animIndirectBuffer.close();
-                this.animIndirectBuffer = new VulkanBuffer(
+                this.animIndirectBuffer = new VkBuffer(
                         device,
-                        indirectStgBuffer.stgVulkanBuffer.getRequestedSize(),
+                        indirectStgBuffer.stgVkBuffer.getRequestedSize(),
                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                         0
@@ -171,22 +169,23 @@ public class GlobalBuffers {
                 var dataBuffer = indirectStgBuffer.mappedMem();
                 var indCommandBuffer = new VkDrawIndexedIndirectCommand.Buffer(dataBuffer);
 
-                cmdList.forEach(indCommandBuffer::put);
+                animatedCmdList.forEach(indCommandBuffer::put);
 
                 if (this.animInstanceDataBuffers != null)
-                    Arrays.stream(this.animInstanceDataBuffers).forEach(VulkanBuffer::close);
-                this.animInstanceDataBuffers = new VulkanBuffer[numSwapChainImages];
+                    Arrays.stream(this.animInstanceDataBuffers).forEach(VkBuffer::close);
+                this.animInstanceDataBuffers = new VkBuffer[numSwapChainImages];
                 for (var i = 0; i < numSwapChainImages; i++)
-                    this.animInstanceDataBuffers[i] = new VulkanBuffer(device,
+                    this.animInstanceDataBuffers[i] = new VkBuffer(
+                            device,
                             (long) this.numAnimIndirectCommands * (VkConstants.MAT4X4_SIZE + VkConstants.INT_LENGTH),
-                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                            0
+                    );
 
                 indirectStgBuffer.recordTransferCommand(cmdBuffer, this.animIndirectBuffer);
-                cmdBuffer.endRecording();
-                cmdBuffer.submitAndWait(device, queue);
-                cmdBuffer.close();
-                indirectStgBuffer.close();
-            }
+                return indirectStgBuffer::close;
+            });
         }
     }
 
@@ -226,7 +225,7 @@ public class GlobalBuffers {
         }
     }
 
-    private void loadInstanceData(Scene scene, List<GpuModel> gpuModels, VulkanBuffer instanceBuffer, Predicate<GpuModel> excludedEntitiesPredicate) {
+    private void loadInstanceData(Scene scene, List<GpuModel> gpuModels, VkBuffer instanceBuffer, Predicate<GpuModel> excludedEntitiesPredicate) {
         if (instanceBuffer == null) return;
         var mappedMemory = instanceBuffer.map();
         var dataBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) instanceBuffer.getRequestedSize());
@@ -332,11 +331,11 @@ public class GlobalBuffers {
     }
 
     public List<GpuModel> loadModels(List<ModelData> models, TextureCache textureCache, CmdPool cmdPool, Queue queue) {
-        List<GpuModel> gpuModelList = new ArrayList<>();
-        List<Texture> textureList = new ArrayList<>();
+        var gpuModelList = new ArrayList<GpuModel>();
+        var textureList = new ArrayList<Texture>();
 
-        var device = cmdPool.getDevice();
-        var cmd = new CmdBuffer(cmdPool, true, true);
+        var device = cmdPool.device;
+        var cmd = cmdPool.newBuffer(true, true);
 
         var verticesStgBuffer = new StagingBuffer(device, this.verticesBuffer.getRequestedSize());
         var indicesStgBuffer = new StagingBuffer(device, this.indicesBuffer.getRequestedSize());
@@ -344,33 +343,30 @@ public class GlobalBuffers {
         var animJointMatricesStgBuffer = new StagingBuffer(device, this.animJointMatricesBuffer.getRequestedSize());
         var animWeightsStgBuffer = new StagingBuffer(device, this.animWeightsBuffer.getRequestedSize());
 
-        cmd.beginRecording();
+        cmd.record(queue, true, () -> {
+            // Load a default material
+            var defaultMaterialList = Collections.singletonList(new ModelData.Material());
+            loadMaterials(textureCache, materialsStgBuffer, defaultMaterialList, textureList);
 
-        // Load a default material
-        var defaultMaterialList = Collections.singletonList(new ModelData.Material());
-        loadMaterials(textureCache, materialsStgBuffer, defaultMaterialList, textureList);
+            for (var modelData : models) {
+                var vulkanModel = new GpuModel(modelData.getModelId());
+                gpuModelList.add(vulkanModel);
 
-        for (var modelData : models) {
-            var vulkanModel = new GpuModel(modelData.getModelId());
-            gpuModelList.add(vulkanModel);
+                var vulkanMaterialList = loadMaterials(textureCache, materialsStgBuffer, modelData.getMaterialList(), textureList);
+                loadMeshes(verticesStgBuffer, indicesStgBuffer, animWeightsStgBuffer, modelData, vulkanModel, vulkanMaterialList);
+                loadAnimationData(modelData, vulkanModel, animJointMatricesStgBuffer);
+            }
 
-            var vulkanMaterialList = loadMaterials(textureCache, materialsStgBuffer, modelData.getMaterialList(), textureList);
-            loadMeshes(verticesStgBuffer, indicesStgBuffer, animWeightsStgBuffer, modelData, vulkanModel, vulkanMaterialList);
-            loadAnimationData(modelData, vulkanModel, animJointMatricesStgBuffer);
-        }
+            if (textureList.isEmpty()) throw new RuntimeException("Impossible Scenario. Not a single texture loaded");
 
-        if (textureList.isEmpty()) throw new RuntimeException("Impossible Scenario. Not a single texture loaded");
-
-        materialsStgBuffer.recordTransferCommand(cmd, this.materialsBuffer);
-        verticesStgBuffer.recordTransferCommand(cmd, this.verticesBuffer);
-        indicesStgBuffer.recordTransferCommand(cmd, this.indicesBuffer);
-        animJointMatricesStgBuffer.recordTransferCommand(cmd, this.animJointMatricesBuffer);
-        animWeightsStgBuffer.recordTransferCommand(cmd, this.animWeightsBuffer);
-        textureList.forEach(t -> t.recordTextureTransition(cmd));
-        cmd.endRecording();
-
-        cmd.submitAndWait(device, queue);
-        cmd.close();
+            materialsStgBuffer.recordTransferCommand(cmd, this.materialsBuffer);
+            verticesStgBuffer.recordTransferCommand(cmd, this.verticesBuffer);
+            indicesStgBuffer.recordTransferCommand(cmd, this.indicesBuffer);
+            animJointMatricesStgBuffer.recordTransferCommand(cmd, this.animJointMatricesBuffer);
+            animWeightsStgBuffer.recordTransferCommand(cmd, this.animWeightsBuffer);
+            textureList.forEach(t -> t.recordTextureTransition(cmd));
+            return null;
+        });
 
         verticesStgBuffer.close();
         indicesStgBuffer.close();
@@ -383,12 +379,12 @@ public class GlobalBuffers {
     }
 
     private void loadStaticEntities(List<GpuModel> gpuModelList, Scene scene, CmdPool cmdPool, Queue queue, int numSwapChainImages) {
-        this.numIndirectCommands = 0;
         try (var stack = MemoryStack.stackPush()) {
-            var device = cmdPool.getDevice();
-            var cmd = new CmdBuffer(cmdPool, true, true);
+            var numIndirectCommands = 0;
+            var device = cmdPool.device;
+            var cmd = cmdPool.newBuffer(true, true);
 
-            List<VkDrawIndexedIndirectCommand> indexedIndirectCommandList = new ArrayList<>();
+            var indexedIndirectCommandList = new ArrayList<VkDrawIndexedIndirectCommand>();
             var numInstances = 0;
             var firstInstance = 0;
             for (var vulkanModel : gpuModelList) {
@@ -403,37 +399,35 @@ public class GlobalBuffers {
                     indexedIndirectCommand.firstInstance(firstInstance);
                     indexedIndirectCommandList.add(indexedIndirectCommand);
 
-                    this.numIndirectCommands++;
+                    numIndirectCommands++;
                     firstInstance += entities.size();
                     numInstances += entities.size();
                 }
             }
+
+            this.numIndirectCommands = numIndirectCommands;
             if (this.numIndirectCommands > 0) {
-                cmd.beginRecording();
+                var finalNumInstances = numInstances;
+                cmd.record(queue, true, () -> {
+                    var indirectStgBuffer = new StagingBuffer(device, (long) IND_COMMAND_STRIDE * this.numIndirectCommands);
+                    if (this.indirectBuffer != null) this.indirectBuffer.close();
+                    this.indirectBuffer = new VkBuffer(device, indirectStgBuffer.stgVkBuffer.getRequestedSize(),
+                            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+                    var dataBuffer = indirectStgBuffer.mappedMem();
+                    var indCommandBuffer = new VkDrawIndexedIndirectCommand.Buffer(dataBuffer);
 
-                var indirectStgBuffer = new StagingBuffer(device, (long) IND_COMMAND_STRIDE * this.numIndirectCommands);
-                if (this.indirectBuffer != null) this.indirectBuffer.close();
-                this.indirectBuffer = new VulkanBuffer(device, indirectStgBuffer.stgVulkanBuffer.getRequestedSize(),
-                        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-                var dataBuffer = indirectStgBuffer.mappedMem();
-                var indCommandBuffer = new VkDrawIndexedIndirectCommand.Buffer(dataBuffer);
+                    indexedIndirectCommandList.forEach(indCommandBuffer::put);
 
-                indexedIndirectCommandList.forEach(indCommandBuffer::put);
+                    if (this.instanceDataBuffers != null) Arrays.stream(this.instanceDataBuffers).forEach(VkBuffer::close);
+                    this.instanceDataBuffers = new VkBuffer[numSwapChainImages];
+                    for (var i = 0; i < numSwapChainImages; i++)
+                        this.instanceDataBuffers[i] = new VkBuffer(device, (long) finalNumInstances * (VkConstants.MAT4X4_SIZE + VkConstants.INT_LENGTH), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
 
-                if (this.instanceDataBuffers != null)
-                    Arrays.stream(this.instanceDataBuffers).forEach(VulkanBuffer::close);
-                this.instanceDataBuffers = new VulkanBuffer[numSwapChainImages];
-                for (var i = 0; i < numSwapChainImages; i++)
-                    this.instanceDataBuffers[i] = new VulkanBuffer(device, (long) numInstances * (VkConstants.MAT4X4_SIZE + VkConstants.INT_LENGTH),
-                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+                    indirectStgBuffer.recordTransferCommand(cmd, this.indirectBuffer);
 
-                indirectStgBuffer.recordTransferCommand(cmd, this.indirectBuffer);
-
-                cmd.endRecording();
-                cmd.submitAndWait(device, queue);
-                cmd.close();
-                indirectStgBuffer.close();
+                    return indirectStgBuffer::close;
+                });
             }
         }
     }
@@ -463,30 +457,30 @@ public class GlobalBuffers {
     private static class StagingBuffer {
 
         private final ByteBuffer dataBuffer;
-        private final VulkanBuffer stgVulkanBuffer;
+        private final VkBuffer stgVkBuffer;
 
         public StagingBuffer(Device device, long size) {
-            this.stgVulkanBuffer = new VulkanBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            var mappedMemory = this.stgVulkanBuffer.map();
-            this.dataBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) this.stgVulkanBuffer.getRequestedSize());
+            this.stgVkBuffer = new VkBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            var mappedMemory = this.stgVkBuffer.map();
+            this.dataBuffer = MemoryUtil.memByteBuffer(mappedMemory, (int) this.stgVkBuffer.getRequestedSize());
         }
 
         public void close() {
-            this.stgVulkanBuffer.unMap();
-            this.stgVulkanBuffer.close();
+            this.stgVkBuffer.unMap();
+            this.stgVkBuffer.close();
         }
 
         public ByteBuffer mappedMem() {
             return this.dataBuffer;
         }
 
-        private void recordTransferCommand(CmdBuffer cmd, VulkanBuffer dstBuffer) {
+        private void recordTransferCommand(CmdBuffer cmd, VkBuffer dstBuffer) {
             try (var stack = MemoryStack.stackPush()) {
                 var copyRegion = VkBufferCopy.calloc(1, stack)
                         .srcOffset(0)
                         .dstOffset(0)
-                        .size(this.stgVulkanBuffer.getRequestedSize());
-                vkCmdCopyBuffer(cmd.vk(), this.stgVulkanBuffer.getBuffer(), dstBuffer.getBuffer(), copyRegion);
+                        .size(this.stgVkBuffer.getRequestedSize());
+                vkCmdCopyBuffer(cmd.vk(), this.stgVkBuffer.getBuffer(), dstBuffer.getBuffer(), copyRegion);
             }
         }
     }

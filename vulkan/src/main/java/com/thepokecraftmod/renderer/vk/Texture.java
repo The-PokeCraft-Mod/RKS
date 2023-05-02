@@ -24,7 +24,7 @@ public class Texture {
     private Image image;
     private ImageView imageView;
     private boolean recordedTransition;
-    private VulkanBuffer stgBuffer;
+    private VkBuffer stgBuffer;
 
     public Texture(Device device, String textureId, BufferedImage cpuTexture, boolean transparent, int imageFormat) {
         LOGGER.info("Creating texture [{}]", textureId);
@@ -83,7 +83,7 @@ public class Texture {
 
     private void createStgBuffer(Device device, ByteBuffer data) {
         var size = data.remaining();
-        this.stgBuffer = new VulkanBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        this.stgBuffer = new VkBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         var mappedMemory = this.stgBuffer.map();
         var buffer = MemoryUtil.memByteBuffer(mappedMemory, (int) this.stgBuffer.getRequestedSize());
@@ -120,7 +120,7 @@ public class Texture {
         return Math.log(n) / Math.log(2);
     }
 
-    private void recordCopyBuffer(MemoryStack stack, CmdBuffer cmd, VulkanBuffer bufferData) {
+    private void recordCopyBuffer(MemoryStack stack, CmdBuffer cmd, VkBuffer bufferData) {
         var region = VkBufferImageCopy.calloc(1, stack)
                 .bufferOffset(0)
                 .bufferRowLength(0)
