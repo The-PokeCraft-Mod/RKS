@@ -24,23 +24,19 @@ public class GeometryAttachments {
         this.attachments = new ArrayList<>();
 
         // Albedo attachment
-        var attachment = new Attachment(device, width, height,
-                VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        var attachment = new Attachment(device, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         this.attachments.add(attachment);
 
         // Normals attachment
-        attachment = new Attachment(device, width, height,
-                VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        attachment = new Attachment(device, width, height, VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         this.attachments.add(attachment);
 
         // PBR attachment
-        attachment = new Attachment(device, width, height,
-                VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        attachment = new Attachment(device, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         this.attachments.add(attachment);
 
         // Depth attachment
-        this.deptAttachment = new Attachment(device, width, height,
-                VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        this.deptAttachment = new Attachment(device, width, height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         this.attachments.add(this.deptAttachment);
     }
 

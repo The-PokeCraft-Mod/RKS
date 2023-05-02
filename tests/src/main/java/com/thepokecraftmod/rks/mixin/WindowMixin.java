@@ -6,6 +6,8 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.platform.WindowEventHandler;
 import com.thepokecraftmod.rks.CreeperReplacementTest;
 import com.thepokecraftmod.rks.util.DebugWindow;
+import org.lwjgl.opengl.GLUtil;
+import org.lwjgl.opengl.KHRDebug;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,6 +17,8 @@ import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import static org.lwjgl.opengl.GL11C.glEnable;
 
 @Mixin(Window.class)
 public class WindowMixin {
@@ -40,5 +44,11 @@ public class WindowMixin {
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwMakeContextCurrent(J)V"))
     private void interop$createDebugWindow(WindowEventHandler handler, ScreenManager screenManager, DisplayData data, String videoMode, String title, CallbackInfo ci) {
         new CreeperReplacementTest(width, height);
+    }
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void interop$debugGl(WindowEventHandler windowEventHandler, ScreenManager screenManager, DisplayData displayData, String string, String string2, CallbackInfo ci) {
+        GLUtil.setupDebugMessageCallback(System.err);
+        glEnable(KHRDebug.GL_DEBUG_OUTPUT_SYNCHRONOUS);
     }
 }

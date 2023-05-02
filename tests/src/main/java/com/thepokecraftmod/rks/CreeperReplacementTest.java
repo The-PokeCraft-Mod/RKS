@@ -13,6 +13,7 @@ import com.thepokecraftmod.rks.model.animation.Animation;
 import com.thepokecraftmod.rks.model.config.animation.AnimationGroup;
 import com.thepokecraftmod.rks.model.texture.TextureType;
 import com.thepokecraftmod.rks.util.DebugWindow;
+import com.thepokecraftmod.rks.util.InteropUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.vulkan.VK10;
@@ -42,6 +43,7 @@ public class CreeperReplacementTest {
     private final Map<RksEntity, Integer> maxFrameMap = new HashMap<>();
     private final Light directionalLight;
     public final RksEntity rayquaza;
+    private final Map<Integer, InteropUtils.Texture2DVkGL> sharedTextures = new HashMap<>();
     private final ModelData rayquazaData;
     private final List<Animation> rayquazaAnimations;
     private float lightAngle = 90.1f;
@@ -119,6 +121,10 @@ public class CreeperReplacementTest {
 
     public static Renderer getRenderer() {
         return INSTANCE.rks.renderer;
+    }
+
+    public static Map<Integer, InteropUtils.Texture2DVkGL> getSharedTextures() {
+        return INSTANCE.sharedTextures;
     }
 
     public void handleInput(Window window, Scene scene, boolean inputConsumed) {

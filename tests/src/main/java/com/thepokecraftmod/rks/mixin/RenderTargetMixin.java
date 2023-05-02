@@ -8,10 +8,8 @@ import com.thepokecraftmod.rks.util.InteropUtils;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL30C;
-import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,39 +22,17 @@ import static org.lwjgl.vulkan.VK10.*;
 public class RenderTargetMixin {
 
     @Shadow
-    @Final
-    public boolean useDepth;
-    @Shadow
     protected int colorTextureId;
     @Shadow
     protected int depthBufferId;
     private InteropUtils.Texture2DVkGL interopDepthTexture;
     private InteropUtils.Texture2DVkGL interopColorTexture;
 
-    @Inject(method = "createBuffers", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;checkStatus()V"))
+    @Inject(method = "createBuffers", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;checkStatus()V", ordinal = 0))
     public void createBuffers(int width, int height, boolean clearError, CallbackInfo ci) {
-        if (this.useDepth) {
-            this.interopDepthTexture = new InteropUtils.Texture2DVkGL(
-                    CreeperReplacementTest.getVkDevice(),
-                    width,
-                    height,
-                    VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    1
-            );
-            InteropUtils.createGlTexture(
-                    CreeperReplacementTest.getVkDevice(),
-                    interopDepthTexture,
-                    GL30C.GL_DEPTH_COMPONENT16,
-                    GL11C.GL_NEAREST,
-                    GL11C.GL_NEAREST,
-                    GL15C.GL_CLAMP_TO_EDGE,
-                    width,
-                    height
-            );
-            GL45C.glTextureParameteri(interopDepthTexture.glObjectId, GL15C.GL_TEXTURE_COMPARE_MODE, 0);
-        }
+        GlStateManager._deleteTexture(colorTextureId);
+        GlStateManager._deleteTexture(depthBufferId);
+
         this.interopColorTexture = new InteropUtils.Texture2DVkGL(
                 CreeperReplacementTest.getVkDevice(),
                 width,
@@ -68,7 +44,7 @@ public class RenderTargetMixin {
         );
         InteropUtils.createGlTexture(
                 CreeperReplacementTest.getVkDevice(),
-                interopDepthTexture,
+                interopColorTexture,
                 GL30C.GL_RGBA8,
                 GL11C.GL_NEAREST,
                 GL11C.GL_NEAREST,
@@ -77,11 +53,33 @@ public class RenderTargetMixin {
                 height
         );
 
-        this.colorTextureId = interopColorTexture.glObjectId;
-        this.depthBufferId = interopColorTexture.glObjectId;
+        this.interopDepthTexture = new InteropUtils.Texture2DVkGL(
+                CreeperReplacementTest.getVkDevice(),
+                width,
+                height,
+                VK_FORMAT_D24_UNORM_S8_UINT,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                1
+        );
+        InteropUtils.createGlTexture(
+                CreeperReplacementTest.getVkDevice(),
+                interopDepthTexture,
+                GL30C.GL_DEPTH24_STENCIL8,
+                GL11C.GL_NEAREST,
+                GL11C.GL_NEAREST,
+                GL15C.GL_CLAMP_TO_EDGE,
+                width,
+                height
+        );
 
-        fboTex(GL30C.GL_COLOR_ATTACHMENT0, this.interopColorTexture.glObjectId);
-        if (this.useDepth) fboTex(GL30C.GL_DEPTH_ATTACHMENT, this.interopDepthTexture.glObjectId);
+        this.colorTextureId = interopColorTexture.glObjectId;
+        this.depthBufferId = interopDepthTexture.glObjectId;
+        CreeperReplacementTest.getSharedTextures().put(colorTextureId, interopColorTexture);
+        CreeperReplacementTest.getSharedTextures().put(depthBufferId, interopColorTexture);
+
+        fboTex(GL30C.GL_COLOR_ATTACHMENT0, colorTextureId);
+        fboTex(GL30C.GL_DEPTH_ATTACHMENT, depthBufferId);
 
         try (var stack = MemoryStack.stackPush()) {
             var cmdBuffer = new CmdBuffer(CreeperReplacementTest.getRenderer().cmdPool, true, true);
@@ -101,10 +99,10 @@ public class RenderTargetMixin {
                             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
                             .newLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
                             .image(interopColorTexture.image.vk())
-                            .subresourceRange(r1 ->
-                                    r1.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                                            .layerCount(1)
-                                            .levelCount(1))
+                            .subresourceRange(r1 -> r1.aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                                    .layerCount(1)
+                                    .levelCount(1)
+                            )
             );
 
             vkCmdPipelineBarrier(
@@ -132,6 +130,7 @@ public class RenderTargetMixin {
     }
 
     public void fboTex(int attachment, int glTexId) {
+        GlStateManager._bindTexture(glTexId);
         GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, attachment, GL11C.GL_TEXTURE_2D, glTexId, 0);
     }
 }
