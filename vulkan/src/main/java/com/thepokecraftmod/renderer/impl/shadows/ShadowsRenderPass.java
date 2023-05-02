@@ -9,7 +9,6 @@ import static org.lwjgl.vulkan.VK11.*;
 import static com.thepokecraftmod.renderer.vk.VkUtils.ok;
 
 public class ShadowsRenderPass {
-
     private static final int MAX_SAMPLES = 1;
 
     private final Device device;

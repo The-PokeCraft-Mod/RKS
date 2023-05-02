@@ -14,7 +14,6 @@ public class Scene {
     public final Projection projection;
     private Light directionalLight;
     private long entitiesLoadedTimeStamp;
-    private ImGuiRenderer guiInstance;
     private boolean lightChanged;
     private Light[] lights;
 
@@ -54,14 +53,6 @@ public class Scene {
 
     public Map<String, List<RksEntity>> getEntitiesMap() {
         return this.entitiesMap;
-    }
-
-    public ImGuiRenderer getGuiInstance() {
-        return this.guiInstance;
-    }
-
-    public void setGuiInstance(ImGuiRenderer guiInstance) {
-        this.guiInstance = guiInstance;
     }
 
     public Light[] getLights() {

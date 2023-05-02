@@ -10,10 +10,23 @@ public class Attachment {
     private final Image image;
     private final ImageView imageView;
 
+    // TODO: builder
     public Attachment(Image image, ImageView imageView, boolean depthAttachment) {
         this.image = image;
         this.imageView = imageView;
         this.depthAttachment = depthAttachment;
+    }
+
+    public Attachment(Device device, Image image, int usage) {
+        this.image = image;
+
+        var aspectMask = calcAspectMask(usage);
+        this.depthAttachment = aspectMask == VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        var imageViewData = new ImageView.ImageViewData()
+                .format(this.image.getFormat())
+                .aspectMask(aspectMask);
+        this.imageView = new ImageView(device, this.image.vk(), imageViewData);
     }
 
     public Attachment(Device device, int width, int height, int format, int usage) {

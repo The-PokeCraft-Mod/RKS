@@ -158,7 +158,7 @@ public class ShadowPass {
                     .renderPass(this.shadowsFrameBuffer.getRenderPass().getVkRenderPass())
                     .pClearValues(clearValues)
                     .renderArea(a -> a.extent().set(shadowMapSize, shadowMapSize))
-                    .framebuffer(frameBuffer.getVkFrameBuffer());
+                    .framebuffer(frameBuffer.vk());
 
             vkCmdBeginRenderPass(cmdHandle, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -167,8 +167,7 @@ public class ShadowPass {
             var descriptorSets = stack.mallocLong(1)
                     .put(0, this.projMatrixDescriptorSet[idx].vk());
 
-            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);
+            vkCmdBindDescriptorSets(cmdHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeLine.getVkPipelineLayout(), 0, descriptorSets, null);
 
             var vertexBuffer = stack.mallocLong(1);
             var instanceBuffer = stack.mallocLong(1);
@@ -184,8 +183,7 @@ public class ShadowPass {
                 vkCmdBindIndexBuffer(cmdHandle, globalBuffers.getIndicesBuffer().getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
                 var indirectBuffer = globalBuffers.getIndirectBuffer();
-                vkCmdDrawIndexedIndirect(cmdHandle, indirectBuffer.getBuffer(), 0, globalBuffers.getNumIndirectCommands(),
-                        GlobalBuffers.IND_COMMAND_STRIDE);
+                vkCmdDrawIndexedIndirect(cmdHandle, indirectBuffer.getBuffer(), 0, globalBuffers.getNumIndirectCommands(), GlobalBuffers.IND_COMMAND_STRIDE);
             }
 
             if (globalBuffers.getNumAnimIndirectCommands() > 0) {

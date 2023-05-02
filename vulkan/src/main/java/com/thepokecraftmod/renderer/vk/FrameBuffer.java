@@ -37,7 +37,7 @@ public class FrameBuffer {
         vkDestroyFramebuffer(this.device.vk(), this.vkFrameBuffer, null);
     }
 
-    public long getVkFrameBuffer() {
+    public long vk() {
         return this.vkFrameBuffer;
     }
 

@@ -150,7 +150,7 @@ public class LightPass {
 
     private void createPipeline(PipelineCache pipelineCache) {
         var pipeLineCreationInfo = new Pipeline.PipeLineCreationInfo(
-                this.lightingFrameBuffer.getLightingRenderPass().getVkRenderPass(), this.shaderProgram, 1, false, false, 0,
+                this.lightingFrameBuffer.getLightingRenderPass().vk(), this.shaderProgram, 1, false, false, 0,
                 new EmptyVertexBufferStructure(), this.descriptorSetLayouts);
         this.pipeline = new Pipeline(pipelineCache, pipeLineCreationInfo);
         pipeLineCreationInfo.close();
@@ -219,9 +219,9 @@ public class LightPass {
 
             var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack)
                     .sType$Default()
-                    .renderPass(this.lightingFrameBuffer.getLightingRenderPass().getVkRenderPass())
+                    .renderPass(this.lightingFrameBuffer.getLightingRenderPass().vk())
                     .pClearValues(clearValues)
-                    .framebuffer(frameBuffer.getVkFrameBuffer())
+                    .framebuffer(frameBuffer.vk())
                     .renderArea(renderArea);
 
             cmdBuffer.beginRecording();

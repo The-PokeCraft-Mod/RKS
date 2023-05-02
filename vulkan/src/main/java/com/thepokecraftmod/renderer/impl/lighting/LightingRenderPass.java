@@ -64,7 +64,7 @@ public class LightingRenderPass {
         vkDestroyRenderPass(this.device.vk(), this.vkRenderPass, null);
     }
 
-    public long getVkRenderPass() {
+    public long vk() {
         return this.vkRenderPass;
     }
 }

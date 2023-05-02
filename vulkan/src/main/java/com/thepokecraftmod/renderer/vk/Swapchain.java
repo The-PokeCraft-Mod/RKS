@@ -1,11 +1,11 @@
 package com.thepokecraftmod.renderer.vk;
 
+import com.thepokecraftmod.renderer.Window;
 import com.thepokecraftmod.renderer.vk.init.Device;
 import com.thepokecraftmod.renderer.vk.init.PhysicalDevice;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
-import com.thepokecraftmod.renderer.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,18 +28,15 @@ public class Swapchain {
         LOGGER.info("Creating Swapchain");
         this.device = device;
         try (var stack = MemoryStack.stackPush()) {
-
             var physicalDevice = device.getPhysicalDevice();
 
             // Get surface capabilities
             var surfCapabilities = VkSurfaceCapabilitiesKHR.calloc(stack);
-            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice().vk(),
-                    surface.getVkSurface(), surfCapabilities), "Failed to get surface capabilities");
+            VkUtils.ok(KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice().vk(), surface.getVkSurface(), surfCapabilities), "Failed to get surface capabilities");
 
             var numImages = calcNumImages(surfCapabilities, requestedImages);
 
             this.surfaceFormat = calcSurfaceFormat(physicalDevice, surface);
-
             this.swapChainExtent = calcSwapChainExtent(window, surfCapabilities);
 
             var vkSwapchainCreateInfo = VkSwapchainCreateInfoKHR.calloc(stack)
@@ -54,12 +51,10 @@ public class Swapchain {
                     .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
                     .preTransform(surfCapabilities.currentTransform())
                     .compositeAlpha(KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
-                    .clipped(true);
-            if (vsync) vkSwapchainCreateInfo.presentMode(KHRSurface.VK_PRESENT_MODE_FIFO_KHR);
-            else vkSwapchainCreateInfo.presentMode(KHRSurface.VK_PRESENT_MODE_IMMEDIATE_KHR);
+                    .clipped(true)
+                    .presentMode(vsync ? KHRSurface.VK_PRESENT_MODE_FIFO_KHR : KHRSurface.VK_PRESENT_MODE_IMMEDIATE_KHR);
             var lp = stack.mallocLong(1);
-            VkUtils.ok(KHRSwapchain.vkCreateSwapchainKHR(device.vk(), vkSwapchainCreateInfo, null, lp),
-                    "Failed to create swap chain");
+            VkUtils.ok(KHRSwapchain.vkCreateSwapchainKHR(device.vk(), vkSwapchainCreateInfo, null, lp), "Failed to create swap chain");
             this.vkSwapChain = lp.get(0);
 
             this.imageViews = createImageViews(stack, device, this.vkSwapChain, this.surfaceFormat.imageFormat);
@@ -92,9 +87,7 @@ public class Swapchain {
         var result = minImages;
         if (maxImages != 0) result = Math.min(requestedImages, maxImages);
         result = Math.max(result, minImages);
-        LOGGER.info("Requested [{}] images, got [{}] images. Surface capabilities, maxImages: [{}], minImages [{}]",
-                requestedImages, result, maxImages, minImages);
-
+        LOGGER.info("Requested [{}] images, got [{}] images. Surface capabilities, maxImages: [{}], minImages [{}]", requestedImages, result, maxImages, minImages);
         return result;
     }
 
@@ -162,13 +155,11 @@ public class Swapchain {
         ImageView[] result;
 
         var ip = stack.mallocInt(1);
-        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, null),
-                "Failed to get number of surface images");
+        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, null), "Failed to get number of surface images");
         var numImages = ip.get(0);
 
         var swapChainImages = stack.mallocLong(numImages);
-        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, swapChainImages),
-                "Failed to get surface images");
+        VkUtils.ok(KHRSwapchain.vkGetSwapchainImagesKHR(device.vk(), swapChain, ip, swapChainImages), "Failed to get surface images");
 
         result = new ImageView[numImages];
         var imageViewData = new ImageView.ImageViewData().format(format).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -214,8 +205,7 @@ public class Swapchain {
         try (var stack = MemoryStack.stackPush()) {
             var present = VkPresentInfoKHR.calloc(stack)
                     .sType(KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-                    .pWaitSemaphores(stack.longs(
-                            this.syncSemaphoresList[this.currentFrame].renderCompleteSemaphore().getVkSemaphore()))
+                    .pWaitSemaphores(stack.longs(this.syncSemaphoresList[this.currentFrame].renderCompleteSemaphore().getVkSemaphore()))
                     .swapchainCount(1)
                     .pSwapchains(stack.longs(this.vkSwapChain))
                     .pImageIndices(stack.ints(this.currentFrame));
@@ -233,8 +223,7 @@ public class Swapchain {
     public record SurfaceFormat(int imageFormat, int colorSpace) {
     }
 
-    public record SyncSemaphores(Semaphore imgAcquisitionSemaphore, Semaphore geometryCompleteSemaphore,
-                                 Semaphore renderCompleteSemaphore) {
+    public record SyncSemaphores(Semaphore imgAcquisitionSemaphore, Semaphore geometryCompleteSemaphore, Semaphore renderCompleteSemaphore) {
 
         public SyncSemaphores(Device device) {
             this(new Semaphore(device), new Semaphore(device), new Semaphore(device));

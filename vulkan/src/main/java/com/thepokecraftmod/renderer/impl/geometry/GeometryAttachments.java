@@ -9,7 +9,6 @@ import java.util.List;
 import static org.lwjgl.vulkan.VK11.*;
 
 public class GeometryAttachments {
-
     private static final int NUMBER_ATTACHMENTS = 4;
     public static final int NUMBER_COLOR_ATTACHMENTS = NUMBER_ATTACHMENTS - 1;
 

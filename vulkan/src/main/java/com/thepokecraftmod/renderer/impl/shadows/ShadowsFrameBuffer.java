@@ -36,8 +36,7 @@ public class ShadowsFrameBuffer {
 
             var attachmentsBuff = stack.mallocLong(1);
             attachmentsBuff.put(0, this.depthAttachment.getImageView().getVkImageView());
-            this.frameBuffer = new FrameBuffer(device, shadowMapSize, shadowMapSize, attachmentsBuff,
-                    this.shadowsRenderPass.getVkRenderPass(), VkConstants.SHADOW_MAP_CASCADE_COUNT);
+            this.frameBuffer = new FrameBuffer(device, shadowMapSize, shadowMapSize, attachmentsBuff, this.shadowsRenderPass.getVkRenderPass(), VkConstants.SHADOW_MAP_CASCADE_COUNT);
         }
     }
 

@@ -164,7 +164,7 @@ public class GeometryPass implements Closeable {
                     clearValues.apply(v -> v.color().float32(0, 0.0f).float32(1, 0.0f).float32(2, 0.0f).float32(3, 1));
             clearValues.flip();
 
-            var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack).sType$Default().renderPass(this.geometryFrameBuffer.getRenderPass().getVkRenderPass()).pClearValues(clearValues).renderArea(a -> a.extent().set(width, height)).framebuffer(frameBuffer.getVkFrameBuffer());
+            var renderPassBeginInfo = VkRenderPassBeginInfo.calloc(stack).sType$Default().renderPass(this.geometryFrameBuffer.getRenderPass().getVkRenderPass()).pClearValues(clearValues).renderArea(a -> a.extent().set(width, height)).framebuffer(frameBuffer.vk());
             var cmdHandle = cmdBuffer.vk();
 
             vkCmdPipelineBarrier(cmdHandle, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, this.memoryBarrier.getVkMemoryBarrier(), null, null);
