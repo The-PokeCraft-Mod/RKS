@@ -13,14 +13,15 @@ public class Attachment implements Closeable {
     private final boolean depthAttachment;
     private final Image image;
     private final ImageView imageView;
-    private final int loadOp;
-    private final int storeOp;
-    private final int stencilLoadOp;
-    private final int stencilStoreOp;
-    private final int samples;
-    private final int initialLayout;
+    public final int loadOp;
+    public final int storeOp;
+    public final int stencilLoadOp;
+    public final int stencilStoreOp;
+    public final int samples;
+    public final int initialLayout;
+    public final int finalLayout;
 
-    public Attachment(boolean depthAttachment, Image image, ImageView imageView, int loadOp, int storeOp, int stencilLoadOp, int stencilStoreOp, int samples, int initialLayout) {
+    public Attachment(boolean depthAttachment, Image image, ImageView imageView, int loadOp, int storeOp, int stencilLoadOp, int stencilStoreOp, int samples, int initialLayout, int finalLayout) {
         this.depthAttachment = depthAttachment;
         this.image = image;
         this.imageView = imageView;
@@ -30,6 +31,7 @@ public class Attachment implements Closeable {
         this.stencilStoreOp = stencilStoreOp;
         this.samples = samples;
         this.initialLayout = initialLayout;
+        this.finalLayout = finalLayout;
     }
 
     public static class Builder {
@@ -44,6 +46,7 @@ public class Attachment implements Closeable {
         private int stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         private int samples = 1;
         private int initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        private int finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         public Builder depthAttachment(boolean depthAttachment) {
             this.depthAttachment = depthAttachment;
@@ -61,6 +64,7 @@ public class Attachment implements Closeable {
             viewBuilder.format(this.image.format);
             this.imageView = viewBuilder.build(device, image);
             if (!depthAttachmentExplicit) this.depthAttachment = imageView.aspectMask == VK_IMAGE_ASPECT_DEPTH_BIT;
+            if (depthAttachment) this.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
             return this;
         }
 
@@ -94,6 +98,11 @@ public class Attachment implements Closeable {
             return this;
         }
 
+        public Builder finalLayout(int finalLayout) {
+            this.finalLayout = finalLayout;
+            return this;
+        }
+
         public Attachment build() {
             return new Attachment(
                     depthAttachment,
@@ -104,7 +113,8 @@ public class Attachment implements Closeable {
                     stencilLoadOp,
                     stencilStoreOp,
                     samples,
-                    initialLayout
+                    initialLayout,
+                    finalLayout
             );
         }
     }

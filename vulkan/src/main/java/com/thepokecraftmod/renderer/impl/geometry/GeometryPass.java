@@ -81,7 +81,8 @@ public class GeometryPass implements Closeable {
         createShaders();
         createDescriptorPool();
         createDescriptorSets(numImages, globalBuffers);
-        createPipeline();
+        System.out.println("NUMBER_COLOR_ATTACHMENTS");
+        createPipeline(3); // FIXME: NO
         VkUtils.copyMatrixToBuffer(this.projMatrixUniform, scene.getProjection().getProjectionMatrix());
         this.barrier = new MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
     }
@@ -137,8 +138,8 @@ public class GeometryPass implements Closeable {
         }
     }
 
-    private void createPipeline() {
-        var creationInfo = new Pipeline.PipeLineCreationInfo(this.frameBuffer.getRenderPass().vk(), this.shaderProgram, GeometryAttachments.NUMBER_COLOR_ATTACHMENTS, true, true, 0, new InstancedVertexBufferStructure(), descSetLayouts);
+    private void createPipeline(int colorAttachmentCount) {
+        var creationInfo = new Pipeline.PipeLineCreationInfo(this.frameBuffer.getRenderPass().vk(), this.shaderProgram, colorAttachmentCount, true, true, 0, new InstancedVertexBufferStructure(), descSetLayouts);
         this.pipeline = new Pipeline(this.cache, creationInfo);
         creationInfo.close();
     }
@@ -151,7 +152,7 @@ public class GeometryPass implements Closeable {
     }
 
     public List<Attachment> getAttachments() {
-        return this.frameBuffer.geometryAttachments().getAttachments();
+        return this.frameBuffer.getRenderPass().attachments;
     }
 
     public void loadModels(TextureCache textureCache) {
@@ -174,7 +175,7 @@ public class GeometryPass implements Closeable {
             var height = swapChainExtent.height();
 
             var frameBuffer = this.frameBuffer.getFrameBuffer();
-            var attachments = this.frameBuffer.geometryAttachments().getAttachments();
+            var attachments = this.frameBuffer.getRenderPass().attachments;
             var clearValues = VkClearValue.calloc(attachments.size(), stack);
             for (var attachment : attachments)
                 if (attachment.isDepthAttachment()) clearValues.apply(v -> v.depthStencil().depth(1.0f));

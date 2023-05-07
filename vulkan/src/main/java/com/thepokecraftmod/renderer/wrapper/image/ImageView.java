@@ -69,7 +69,7 @@ public class ImageView implements VkWrapper<Long> {
         }
 
         public Builder generateAspectMask(int usage) {
-            var aspectMask = 0;
+            var aspectMask = usage; // fallback for custom aspect mask
             if ((usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) > 0) aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             if ((usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) > 0) aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             this.aspectMask = aspectMask;

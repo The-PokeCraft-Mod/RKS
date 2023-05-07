@@ -3,7 +3,6 @@ package com.thepokecraftmod.renderer.impl.shadows;
 import com.thepokecraftmod.renderer.wrapper.core.Settings;
 import com.thepokecraftmod.renderer.impl.GlobalBuffers;
 import com.thepokecraftmod.renderer.impl.ImplUtils;
-import com.thepokecraftmod.renderer.impl.geometry.GeometryAttachments;
 import com.thepokecraftmod.renderer.scene.Scene;
 import com.thepokecraftmod.renderer.wrapper.cmd.CmdBuffer;
 import com.thepokecraftmod.renderer.wrapper.core.Swapchain;
@@ -95,9 +94,10 @@ public class ShadowPass {
     }
 
     private void createPipeline(PipelineCache pipelineCache) {
+        System.out.println("NUMBER_COLOR_ATTACHMENTS");
         var pipeLineCreationInfo = new Pipeline.PipeLineCreationInfo(
                 this.shadowsFrameBuffer.getRenderPass().getVkRenderPass(), this.shaderProgram,
-                GeometryAttachments.NUMBER_COLOR_ATTACHMENTS, true, true, 0,
+                3, true, true, 0,
                 new InstancedVertexBufferStructure(), this.descriptorSetLayouts);
         this.pipeline = new Pipeline(pipelineCache, pipeLineCreationInfo);
     }
