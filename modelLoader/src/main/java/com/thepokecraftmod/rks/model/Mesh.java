@@ -13,5 +13,7 @@ public record Mesh(
         List<Vector3f> positions,
         List<Vector2f> uvs,
         List<Vector3f> normals,
+        List<Vector3f> tangents,
+        List<Vector3f> biTangents,
         List<Bone> bones
 ) {}

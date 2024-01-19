@@ -54,6 +54,12 @@ public class Animation {
         return (float) (ticksPassed % animationDuration);
     }
 
+    public Matrix4f[] getFrameTransform(int frame) {
+        var boneTransforms = new Matrix4f[this.skeleton.bones.length];
+        readNodeHierarchy(frame, skeleton.rootNode, new Matrix4f().identity(), boneTransforms);
+        return boneTransforms;
+    }
+
     public Matrix4f[] getFrameTransform(double secondsPassed) {
         var boneTransforms = new Matrix4f[this.skeleton.bones.length];
         readNodeHierarchy(getAnimationTime(secondsPassed), skeleton.rootNode, new Matrix4f().identity(), boneTransforms);
