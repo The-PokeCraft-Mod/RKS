@@ -1,4 +1,4 @@
-fun DependencyHandlerScope.lwjgl(name: String, useNatives: Boolean = true) {
+ fun DependencyHandlerScope.lwjgl(name: String, useNatives: Boolean = true) {
     implementation("org.lwjgl:lwjgl-$name")
     if (useNatives) runtimeOnly("org.lwjgl:lwjgl-" + name + "::${project.properties["lwjglNatives"]}")
 }

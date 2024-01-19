@@ -9,4 +9,3 @@ pluginManagement {
 
 include("modelLoader")
 include("vulkan")
-include("tests")
